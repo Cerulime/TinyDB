@@ -1,4 +1,4 @@
-#include <../include/IndexTree.hpp>
+#include "..\include\IndexTree.hpp"
 
 std::shared_ptr<IndexTree::Tree> IndexTree::build()
 {

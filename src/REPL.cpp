@@ -1,4 +1,4 @@
-#include "..\.\include\REPL.hpp"
+#include "..\include\REPL.hpp"
 
 std::string REPL::last_input = "";
 std::string REPL::now_input = "None.";

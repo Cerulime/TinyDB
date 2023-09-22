@@ -1,4 +1,4 @@
-#include "..\.\include\HashTable.hpp"
+#include "..\include\HashTable.hpp"
 
 unsigned long long HashTable::fmix(unsigned long long x)
 {

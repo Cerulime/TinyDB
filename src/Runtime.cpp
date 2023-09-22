@@ -1,4 +1,4 @@
-#include "..\.\include\Runtime.hpp"
+#include "..\include\Runtime.hpp"
 
 bool Runtime::valid_statement(const Runtime::Statement &statement)
 {

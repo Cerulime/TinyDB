@@ -1,4 +1,4 @@
-#include "..\.\include\Serialization.hpp"
+#include "..\include\Serialization.hpp"
 
 std::string Serialization::base64encode(const char *bytes, const std::size_t &size)
 {

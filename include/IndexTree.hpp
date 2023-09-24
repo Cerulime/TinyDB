@@ -2,7 +2,7 @@
 
 namespace IndexTree
 {
-    const int max_children = 16;
+    inline const int max_children = 64;
     struct Node
     {
         bool is_leaf;
@@ -14,7 +14,7 @@ namespace IndexTree
     struct LeafNode : Node
     {
         std::string filename;
-        std::shared_ptr<LeafNode> next;
+        std::shared_ptr<LeafNode> prev, next;
         std::vector<std::string> datas;
         LeafNode() : Node(true) {}
     };
@@ -36,4 +36,5 @@ namespace IndexTree
     std::shared_ptr<LeafNode> find_leaf(std::shared_ptr<Tree>, const std::string &);
     std::vector<std::shared_ptr<LeafNode>> fuzzy_find_leaf(std::shared_ptr<Tree>, const std::string &);
     bool in_leaf(std::shared_ptr<LeafNode>, const std::string &);
+    void remove(std::shared_ptr<Tree>, const std::string &);
 }

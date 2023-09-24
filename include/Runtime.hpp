@@ -17,7 +17,7 @@ namespace Runtime
         std::string table;
         std::vector<std::string> datas;
     };
-    static const Statement null_statement = {Operation::ERRORP, "", {}};
+    inline const Statement null_statement = {Operation::ERRORP, "", {}};
     
     bool valid_statement(const Statement &);
 }

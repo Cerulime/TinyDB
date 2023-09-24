@@ -9,9 +9,9 @@ k = 13
 
 namespace HashTable
 {
-    static const int str_len = 50;
-    static const int k_hash = 13;
-    static const unsigned int prime = 18617;
+    inline const int str_len = 50;
+    inline const int k_hash = 13;
+    inline const unsigned int prime = 18617;
     std::mt19937_64 get_rand(std::random_device{}());
 
     unsigned long long fmix(unsigned long long);

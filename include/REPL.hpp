@@ -1,8 +1,8 @@
 #include "Runtime.hpp"
 
 namespace REPL {
-    const std::string TAB = "    ";
-    const std::string BANNER = R"(
+    inline const std::string TAB = "    ";
+    inline const std::string BANNER = R"(
  _____  _               ______ ______ 
 |_   _|(_)              |  _  \| ___ \
   | |   _  _ __   _   _ | | | || |_/ /

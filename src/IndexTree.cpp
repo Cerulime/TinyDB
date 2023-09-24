@@ -29,8 +29,11 @@ std::shared_ptr<IndexTree::InternalNode> IndexTree::split(std::shared_ptr<IndexT
         auto now = std::dynamic_pointer_cast<IndexTree::LeafNode>(node);
         auto new_leaf = std::make_shared<IndexTree::LeafNode>();
         auto old_next_leaf = now->next;
+
         now->next = new_leaf;
+        new_leaf->prev = now;
         new_leaf->next = old_next_leaf;
+        old_next_leaf->prev = new_leaf;
 
         new_leaf->datas.insert(new_leaf->datas.end(), std::make_move_iterator(now->datas.begin() + now->datas.size() / 2), std::make_move_iterator(now->datas.end()));
         now->datas.erase(now->datas.begin() + now->datas.size() / 2, now->datas.end());
@@ -164,7 +167,7 @@ std::shared_ptr<IndexTree::LeafNode> IndexTree::find_leaf(std::shared_ptr<IndexT
 std::vector<std::shared_ptr<IndexTree::LeafNode>> IndexTree::fuzzy_find_leaf(std::shared_ptr<IndexTree::Tree> tree, const std::string &key)
 {
     auto hash = HashTable::create_map(key, tree->seed);
-    auto is_in = [&hash](const std::bitset<HashTable::prime> &map) -> bool {
+    auto is_all_inmap = [&hash](const std::bitset<HashTable::prime> &map) -> bool {
         for (const auto &pos : hash)
             if (!map[pos])
                 return false;
@@ -175,12 +178,12 @@ std::vector<std::shared_ptr<IndexTree::LeafNode>> IndexTree::fuzzy_find_leaf(std
     if (tree->root->is_leaf)
     {
         auto tmp = std::dynamic_pointer_cast<IndexTree::LeafNode>(tree->root);
-        if (is_in(tmp->map))
+        if (is_all_inmap(tmp->map))
             ret.push_back(tmp);
         return ret;
     }
     auto tmp = std::dynamic_pointer_cast<IndexTree::InternalNode>(tree->root);
-    if (!is_in(tmp->map))
+    if (!is_all_inmap(tmp->map))
         return ret;
     std::queue<std::shared_ptr<IndexTree::InternalNode>> internal_nodes_queue;
     internal_nodes_queue.push(std::move(tmp));
@@ -193,14 +196,28 @@ std::vector<std::shared_ptr<IndexTree::LeafNode>> IndexTree::fuzzy_find_leaf(std
             if (child->is_leaf)
             {
                 auto leaf = std::dynamic_pointer_cast<IndexTree::LeafNode>(child);
-                if (is_in(leaf->map))
+                if (is_all_inmap(leaf->map))
                     ret.push_back(std::move(leaf));
                 continue;
             }
             auto internal = std::dynamic_pointer_cast<IndexTree::InternalNode>(child);
-            if (is_in(internal->map))
+            if (is_all_inmap(internal->map))
                 internal_nodes_queue.push(std::move(internal));
         }
     }
     return ret;
+}
+
+void IndexTree::remove(std::shared_ptr<IndexTree::Tree> tree, const std::string &key)
+{
+    auto now = IndexTree::find_leaf(tree, key);
+    assert(now != nullptr);
+    if (!IndexTree::in_leaf(now, key))
+        return;
+    now->datas.erase(std::lower_bound(now->datas.begin(), now->datas.end(), key));
+    if (now->datas.size() < IndexTree::max_children / 2)
+    {
+        // TODO: merge
+    }
+    return;
 }

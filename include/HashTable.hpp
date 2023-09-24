@@ -16,6 +16,6 @@ namespace HashTable
 
     unsigned long long fmix(unsigned long long);
     std::tuple<unsigned long long, unsigned long long> get_hash(const void *, const unsigned int &, const unsigned int &);
-    std::bitset<prime> create_map(const std::string &, unsigned long long);
+    std::vector<int> create_map(const std::string &, unsigned long long);
     bool find(const std::bitset<prime> &, const unsigned long long &, const std::string &);
 }

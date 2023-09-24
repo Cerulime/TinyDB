@@ -60,10 +60,9 @@ std::tuple<unsigned long long, unsigned long long> HashTable::get_hash(const voi
     return std::make_tuple(lw, hg);
 }
 
-std::bitset<HashTable::prime> HashTable::create_map(const std::string &s, unsigned long long seed)
+std::vector<int> HashTable::create_map(const std::string &s, unsigned long long seed)
 {
-    std::bitset<18617> map;
-    map.reset();
+    std::vector<int> index;
 
     int len = s.length();
     for (int i = 0; i < len; i++)
@@ -74,10 +73,10 @@ std::bitset<HashTable::prime> HashTable::create_map(const std::string &s, unsign
             ch[j] = s[i + j];
             const auto &[lw, hg] = HashTable::get_hash(ch, j+1, seed);
             for (int k = 1; k <= HashTable::k_hash; k++)
-                map[(lw + hg*k) % HashTable::prime]=1;
+                index.push_back((lw + hg*k) % HashTable::prime);
         }
     }
-    return map;
+    return index;
 }
 
 bool HashTable::find(const std::bitset<HashTable::prime> &map, const unsigned long long &seed, const std::string &s)

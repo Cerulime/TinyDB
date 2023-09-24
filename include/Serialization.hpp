@@ -1,3 +1,4 @@
+#pragma once
 #include "IndexTree.hpp"
 
 namespace Serialization

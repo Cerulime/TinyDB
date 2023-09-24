@@ -34,7 +34,7 @@ std::shared_ptr<IndexTree::InternalNode> IndexTree::split(std::shared_ptr<IndexT
 
         new_leaf->datas.insert(new_leaf->datas.end(), std::make_move_iterator(now->datas.begin() + now->datas.size() / 2), std::make_move_iterator(now->datas.end()));
         now->datas.erase(now->datas.begin() + now->datas.size() / 2, now->datas.end());
-        auto update = [seed](std::shared_ptr<IndexTree::LeafNode> now){
+        auto update = [&seed](std::shared_ptr<IndexTree::LeafNode> now){
             now->map.reset();
             for (const auto &data : now->datas)
             {
@@ -163,5 +163,44 @@ std::shared_ptr<IndexTree::LeafNode> IndexTree::find_leaf(std::shared_ptr<IndexT
 
 std::vector<std::shared_ptr<IndexTree::LeafNode>> IndexTree::fuzzy_find_leaf(std::shared_ptr<IndexTree::Tree> tree, const std::string &key)
 {
-    return {};
+    auto hash = HashTable::create_map(key, tree->seed);
+    auto is_in = [&hash](const std::bitset<HashTable::prime> &map) -> bool {
+        for (const auto &pos : hash)
+            if (!map[pos])
+                return false;
+        return true;
+    };
+    std::vector<std::shared_ptr<IndexTree::LeafNode>> ret;
+
+    if (tree->root->is_leaf)
+    {
+        auto tmp = std::dynamic_pointer_cast<IndexTree::LeafNode>(tree->root);
+        if (is_in(tmp->map))
+            ret.push_back(tmp);
+        return ret;
+    }
+    auto tmp = std::dynamic_pointer_cast<IndexTree::InternalNode>(tree->root);
+    if (!is_in(tmp->map))
+        return ret;
+    std::queue<std::shared_ptr<IndexTree::InternalNode>> internal_nodes_queue;
+    internal_nodes_queue.push(std::move(tmp));
+    while (!internal_nodes_queue.empty())
+    {
+        auto now = internal_nodes_queue.front();
+        internal_nodes_queue.pop();
+        for (const auto &[key, child] : now->children)
+        {
+            if (child->is_leaf)
+            {
+                auto leaf = std::dynamic_pointer_cast<IndexTree::LeafNode>(child);
+                if (is_in(leaf->map))
+                    ret.push_back(std::move(leaf));
+                continue;
+            }
+            auto internal = std::dynamic_pointer_cast<IndexTree::InternalNode>(child);
+            if (is_in(internal->map))
+                internal_nodes_queue.push(std::move(internal));
+        }
+    }
+    return ret;
 }

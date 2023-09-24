@@ -99,15 +99,6 @@ Runtime::Statement REPL::parse_table(Runtime::Statement statement, const std::st
 }
 
 /**
- * Parses the "WHERE" clause of a SQL statement.
- * 
- * @param statement The statement to be parsed.
- * @param input The input string to be parsed.
- * @param len The length of the input string.
- * @param p The current position in the input string.
- * @return The parsed statement.
- */
-/**
  * @brief Parses the "WHERE" clause of a SQL statement.
  * 
  * @param statement The statement to be parsed.
@@ -128,9 +119,9 @@ Runtime::Statement REPL::parse_where(Runtime::Statement statement, const std::st
     };
 
     bool success;
-    std::size_t last_size = statement.datas.size();
+    auto last_size = statement.datas.size();
     success = process_input(' ');
-    std::size_t now_size = statement.datas.size();
+    auto now_size = statement.datas.size();
     if (!success || now_size != last_size + 1 || input.compare(p + 1, 4, "LIKE"))
         return REPL::error_statement(input, __func__);
 
@@ -155,7 +146,7 @@ Runtime::Statement REPL::parse_where(Runtime::Statement statement, const std::st
  */
 Runtime::Statement REPL::parse_datas(Runtime::Statement statement, const std::string_view &input,const std::size_t &len, std::size_t &p, const char &eof)
 {
-    std::size_t last_size = statement.datas.size();
+    auto last_size = statement.datas.size();
 
     while (p < len && input[p] != ';')
     {
@@ -170,7 +161,7 @@ Runtime::Statement REPL::parse_datas(Runtime::Statement statement, const std::st
         p++;
     }
 
-    std::size_t now_size = statement.datas.size();
+    auto now_size = statement.datas.size();
     if(now_size == last_size)
         return REPL::error_statement(input, __func__);
     return statement;

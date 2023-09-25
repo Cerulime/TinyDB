@@ -8,6 +8,17 @@ std::shared_ptr<IndexTree::Tree> IndexTree::build()
     return tree;
 }
 
+void IndexTree::merge_map(std::shared_ptr<IndexTree::LeafNode> node, const unsigned long long &seed)
+{
+    node->map.reset();
+    for (const auto &[key, data] : node->datas)
+    {
+        auto hash = HashTable::create_map(key, seed);
+        for (const auto &pos : hash)
+            node->map[pos] = true;
+    }
+}
+
 void IndexTree::merge_map(std::shared_ptr<IndexTree::InternalNode> node)
 {
     node->map.reset();
@@ -18,6 +29,15 @@ void IndexTree::merge_map(std::shared_ptr<IndexTree::InternalNode> node)
             node->map |= std::dynamic_pointer_cast<IndexTree::LeafNode>(child)->map;
         else
             node->map |= std::dynamic_pointer_cast<IndexTree::InternalNode>(child)->map;
+    }
+}
+
+void IndexTree::update_map(std::shared_ptr<IndexTree::InternalNode> ancestor)
+{
+    while (ancestor != nullptr)
+    {
+        IndexTree::merge_map(ancestor);
+        ancestor = ancestor->parent;
     }
 }
 
@@ -35,19 +55,15 @@ std::shared_ptr<IndexTree::InternalNode> IndexTree::split(std::shared_ptr<IndexT
         new_leaf->next = old_next_leaf;
         old_next_leaf->prev = new_leaf;
 
-        new_leaf->datas.insert(new_leaf->datas.end(), std::make_move_iterator(now->datas.begin() + now->datas.size() / 2), std::make_move_iterator(now->datas.end()));
-        now->datas.erase(now->datas.begin() + now->datas.size() / 2, now->datas.end());
-        auto update = [&seed](std::shared_ptr<IndexTree::LeafNode> now){
-            now->map.reset();
-            for (const auto &data : now->datas)
-            {
-                auto hash = HashTable::create_map(data, seed);
-                for (const auto &pos : hash)
-                    now->map[pos] = true;
-            }
-        };
-        update(new_leaf);
-        update(now);
+        auto ptr = now->datas.begin();
+        std::advance(ptr, now->datas.size() / 2);
+        while (ptr != now->datas.end())
+        {
+            new_leaf->datas.insert(std::move(*ptr));
+            ptr = now->datas.erase(ptr);
+        }
+        IndexTree::merge_map(new_leaf, seed);
+        IndexTree::merge_map(now, seed);
 
         new_leaf->parent = father;
         new_leaf->filename = now->filename;
@@ -55,17 +71,21 @@ std::shared_ptr<IndexTree::InternalNode> IndexTree::split(std::shared_ptr<IndexT
         if (father == nullptr)
         {
             auto new_father = std::make_shared<IndexTree::InternalNode>();
-            new_father->children[now->datas.back()] = now;
-            new_father->children[new_leaf->datas.back()] = new_leaf;
+            new_father->children[now->datas.rbegin()->first] = now;
+            new_father->children[new_leaf->datas.rbegin()->first] = new_leaf;
             now->parent = new_father;
             new_leaf->parent = new_father;
+            new_father->map = now->map | new_leaf->map;
             return new_father;
         }
         else
         {
             auto old_father = std::dynamic_pointer_cast<IndexTree::InternalNode>(father);
-            old_father->children[now->datas.back()] = now;
-            old_father->children[new_leaf->datas.back()] = new_leaf;
+            old_father->children[now->datas.rbegin()->first] = now;
+            old_father->children[new_leaf->datas.rbegin()->first] = new_leaf;
+            if (old_father->children.size() > IndexTree::max_children)
+                return IndexTree::split(old_father, seed);
+            IndexTree::update_map(old_father);
             return old_father;
         }
     }
@@ -81,9 +101,10 @@ std::shared_ptr<IndexTree::InternalNode> IndexTree::split(std::shared_ptr<IndexT
             new_internal->children.insert(std::move(*ptr));
             ptr = now->children.erase(ptr);
         }
-        new_internal->parent = father;
         IndexTree::merge_map(now);
         IndexTree::merge_map(new_internal);
+
+        new_internal->parent = father;
 
         if (father == nullptr)
         {
@@ -92,6 +113,7 @@ std::shared_ptr<IndexTree::InternalNode> IndexTree::split(std::shared_ptr<IndexT
             new_father->children[new_internal->children.rbegin()->first] = new_internal;
             now->parent = new_father;
             new_internal->parent = new_father;
+            new_father->map = now->map | new_internal->map;
             return new_father;
         }
         else
@@ -99,20 +121,20 @@ std::shared_ptr<IndexTree::InternalNode> IndexTree::split(std::shared_ptr<IndexT
             auto old_father = std::dynamic_pointer_cast<IndexTree::InternalNode>(father);
             old_father->children[now->children.rbegin()->first] = now;
             old_father->children[new_internal->children.rbegin()->first] = new_internal;
+            if (old_father->children.size() > IndexTree::max_children)
+                return IndexTree::split(old_father, seed);
+            IndexTree::update_map(old_father);
             return old_father;
         }
     }
 }
 
-bool IndexTree::in_leaf(std::shared_ptr<IndexTree::LeafNode> leaf, const std::string &key)
+inline bool IndexTree::in_leaf(std::shared_ptr<IndexTree::LeafNode> leaf, const std::string &key)
 {
-    auto it = std::lower_bound(leaf->datas.begin(), leaf->datas.end(), key);
-    if (it == leaf->datas.end())
-        return false;
-    return *it == key;
+    return leaf->datas.find(key) != leaf->datas.end();
 }
 
-void IndexTree::insert(std::shared_ptr<IndexTree::Tree> tree, const std::string &key)
+void IndexTree::insert(std::shared_ptr<IndexTree::Tree> tree, const std::string &key, const std::vector<std::pair<std::string, std::string>> &data)
 {
     if (tree == nullptr)
         tree = build();
@@ -120,12 +142,12 @@ void IndexTree::insert(std::shared_ptr<IndexTree::Tree> tree, const std::string 
     assert(now != nullptr);
     if (IndexTree::in_leaf(now, key))
         return;
-    if (!tree->root->is_leaf && key > now->datas.back())
+    if (!tree->root->is_leaf && key > now->datas.rbegin()->first)
     {
         auto internal = std::dynamic_pointer_cast<IndexTree::InternalNode>(tree->root);
         while (true)
         {
-            auto last = (internal->children.rbegin());
+            auto last = internal->children.rbegin();
             auto child = last->second;
             internal->children.erase((++last).base());
             internal->children[key]=child;
@@ -134,15 +156,17 @@ void IndexTree::insert(std::shared_ptr<IndexTree::Tree> tree, const std::string 
             internal = std::dynamic_pointer_cast<IndexTree::InternalNode>(child);
         }
     }
-    now->datas.push_back(key);
-    std::sort(now->datas.begin(), now->datas.end());
+    now->datas[key] = data;
+    IndexTree::merge_map(now, tree->seed);
     if (now->datas.size() == IndexTree::max_children)
     {
-        bool modify_root = tree->root == now;
+        auto old_root = tree->root;
         auto new_parent = IndexTree::split(now, tree->seed);
-        if (modify_root)
+        if (old_root != tree->root)
             tree->root = new_parent;
+        return;
     }
+    IndexTree::update_map(now->parent);
     return;
 }
 
@@ -208,16 +232,59 @@ std::vector<std::shared_ptr<IndexTree::LeafNode>> IndexTree::fuzzy_find_leaf(std
     return ret;
 }
 
+void IndexTree::merge(std::shared_ptr<IndexTree::Node> node, const unsigned long long &seed)
+{
+    auto father = node->parent;
+    if (node->is_leaf)
+    {
+
+    }
+    else
+    {
+        
+    }
+}
+
 void IndexTree::remove(std::shared_ptr<IndexTree::Tree> tree, const std::string &key)
 {
     auto now = IndexTree::find_leaf(tree, key);
     assert(now != nullptr);
     if (!IndexTree::in_leaf(now, key))
         return;
-    now->datas.erase(std::lower_bound(now->datas.begin(), now->datas.end(), key));
-    if (now->datas.size() < IndexTree::max_children / 2)
+    if (now->datas.size() == 1)
     {
-        // TODO: merge
+        if (now == tree->root)
+        {
+            tree->root = nullptr;
+            return;
+        }
+        auto father = now->parent;
+        father->children.erase(key);
+        IndexTree::merge_map(father);
+        if (father->children.size() < IndexTree::max_children / 2)
+            return IndexTree::merge(father, tree->seed);
+        IndexTree::update_map(father->parent);
+        return;
     }
+    if (!tree->root->is_leaf && key == now->datas.rbegin()->first)
+    {
+        auto internal = std::dynamic_pointer_cast<IndexTree::InternalNode>(tree->root);
+        auto second_last = (++now->datas.rbegin())->first;
+        while (true)
+        {
+            auto last = internal->children.rbegin();
+            auto child = last->second;
+            internal->children.erase((++last).base());
+            internal->children[second_last]=child;
+            if (child->is_leaf)
+                break;
+            internal = std::dynamic_pointer_cast<IndexTree::InternalNode>(child);
+        }
+    }
+    now->datas.erase(key);
+    IndexTree::merge_map(now, tree->seed);
+    if (now->datas.size() < IndexTree::max_children / 2)
+        return IndexTree::merge(now, tree->seed);
+    IndexTree::update_map(now->parent);
     return;
 }

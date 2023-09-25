@@ -7,7 +7,7 @@ namespace IndexTree
     struct Node
     {
         bool is_leaf;
-        std::shared_ptr<Node> parent;
+        std::shared_ptr<InternalNode> parent;
         std::bitset<HashTable::prime> map;
         explicit Node(bool is_leaf) : is_leaf(is_leaf) {}
         virtual ~Node() = default;
@@ -16,7 +16,7 @@ namespace IndexTree
     {
         std::string filename;
         std::shared_ptr<LeafNode> prev, next;
-        std::vector<std::string> datas;
+        std::map<std::string, std::vector<std::pair<std::string, std::string>>>datas;
         LeafNode() : Node(true) {}
     };
     struct InternalNode : Node
@@ -31,11 +31,14 @@ namespace IndexTree
     };
 
     std::shared_ptr<Tree> build();
+    void merge_map(std::shared_ptr<LeafNode>, const unsigned long long &);
     void merge_map(std::shared_ptr<InternalNode>);
+    void update_map(std::shared_ptr<InternalNode>);
     std::shared_ptr<InternalNode> split(std::shared_ptr<Node>, const unsigned long long &);
-    void insert(std::shared_ptr<Tree>, const std::string &);
+    void insert(std::shared_ptr<Tree>, const std::string &, const std::vector<std::pair<std::string, std::string>> &);
     std::shared_ptr<LeafNode> find_leaf(std::shared_ptr<Tree>, const std::string &);
     std::vector<std::shared_ptr<LeafNode>> fuzzy_find_leaf(std::shared_ptr<Tree>, const std::string &);
-    bool in_leaf(std::shared_ptr<LeafNode>, const std::string &);
+    inline bool in_leaf(std::shared_ptr<LeafNode>, const std::string &);
+    void merge(std::shared_ptr<Node>, const unsigned long long &);
     void remove(std::shared_ptr<Tree>, const std::string &);
 }

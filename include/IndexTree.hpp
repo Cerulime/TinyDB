@@ -15,7 +15,7 @@ namespace IndexTree
     struct LeafNode : Node
     {
         std::string filename;
-        std::shared_ptr<LeafNode> prev, next;
+        std::shared_ptr<LeafNode> next;
         std::map<std::string, std::vector<std::pair<std::string, std::string>>>datas;
         LeafNode() : Node(true) {}
     };

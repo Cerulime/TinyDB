@@ -1,4 +1,5 @@
 #include "..\include\IndexTree.hpp"
+#include "..\include\FileOperation.hpp"
 
 std::shared_ptr<IndexTree::Tree> IndexTree::build()
 {
@@ -51,9 +52,7 @@ std::shared_ptr<IndexTree::InternalNode> IndexTree::split(std::shared_ptr<IndexT
         auto old_next_leaf = now->next;
 
         now->next = new_leaf;
-        new_leaf->prev = now;
         new_leaf->next = old_next_leaf;
-        old_next_leaf->prev = new_leaf;
 
         auto ptr = now->datas.begin();
         std::advance(ptr, now->datas.size() / 2);
@@ -237,11 +236,52 @@ void IndexTree::merge(std::shared_ptr<IndexTree::Node> node, const unsigned long
     auto father = node->parent;
     if (node->is_leaf)
     {
+        if (father == nullptr)
+            return;
+        if (father->children.size() == 1)
+            return;
+        auto now = std::dynamic_pointer_cast<IndexTree::LeafNode>(node);
+        auto get_brother = [](std::shared_ptr<IndexTree::LeafNode> now)->std::shared_ptr<IndexTree::LeafNode> {
+            auto father = now->parent;
+            auto it = std::prev(father->children.find(now->datas.rbegin()->first));
+            if (it == father->children.begin())
+                return nullptr;
+            return std::dynamic_pointer_cast<IndexTree::LeafNode>(it->second);
+        };
+        
+        auto brother = get_brother(now);
+        if (brother == nullptr)
+        {
 
+        }
+        if (brother->datas.size() - 1 >= IndexTree::max_children / 2)
+        {
+            auto max = brother->datas.rbegin();
+            father->children.erase(max->first);
+            now->datas.insert(std::move(*max));
+            brother->datas.erase(max->first);
+            father->children[brother->datas.rbegin()->first] = brother;
+            IndexTree::merge_map(now, seed);
+            IndexTree::merge_map(brother, seed);
+            IndexTree::update_map(father);
+            return;
+        }
+        auto cousin = get_brother(brother);
+        if (cousin != nullptr)
+            cousin->next = now;
+        auto max = brother->datas.rbegin();
+        father->children.erase(max->first);
+        now->datas.merge(brother->datas);
+        brother->datas.clear();
+        FileOperation::merge_file(now->filename, brother->filename);
+        IndexTree::merge_map(father);
+
+        if (father->children.size() < IndexTree::max_children / 2)
+            return IndexTree::merge(father, seed);
     }
     else
     {
-        
+
     }
 }
 

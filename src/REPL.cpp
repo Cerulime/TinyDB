@@ -178,7 +178,23 @@ Runtime::Statement REPL::parse_statement(const std::string &input_raw)
     Runtime::Statement statement = {};
     std::string_view input = input_raw;
     auto len = input.length();
-    if (!input.compare(0, 11, "INSERT INTO"))
+    if (!input.compare(0, 6, "CREATE"))
+    {
+        statement.opt = Runtime::Operation::CREATE;
+
+        std::size_t p = 7;
+        statement = REPL::parse_table(statement, input, len, p);
+        if (!Runtime::valid_statement(statement))
+            return REPL::error_statement(input, __func__);
+        
+        p = p + 2;
+        statement = REPL::parse_datas(statement, input, len, p, ')');
+        if (!Runtime::valid_statement(statement) || input[p] != ';')
+            return REPL::error_statement(input, __func__);
+        
+        return statement;
+    }
+    else if (!input.compare(0, 11, "INSERT INTO"))
     {
         statement.opt = Runtime::Operation::INSERT;
 
@@ -188,7 +204,7 @@ Runtime::Statement REPL::parse_statement(const std::string &input_raw)
         if (!Runtime::valid_statement(statement) || input.compare(p + 1, 6, "VALUES"))
             return REPL::error_statement(input, __func__);
         
-        p = p + 8;
+        p = p + 9;
         statement = REPL::parse_datas(statement, input, len, p, ')');
         if (!Runtime::valid_statement(statement) || input[p] != ';')
             return REPL::error_statement(input, __func__);

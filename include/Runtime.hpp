@@ -1,11 +1,12 @@
 #pragma once
-#include "Include.hpp"
+#include "IndexTree.hpp"
 
 namespace Runtime
 {
     enum class Operation
     {
         ERRORP,
+        CREATE,
         INSERT,
         DELETE,
         UPDATE,
@@ -18,6 +19,8 @@ namespace Runtime
         std::vector<std::string> datas;
     };
     inline const Statement null_statement = {Operation::ERRORP, "", {}};
+    std::shared_ptr<IndexTree::Tree> tree;
     
     bool valid_statement(const Statement &);
+    std::vector<std::string> run_statement(const Statement &);
 }

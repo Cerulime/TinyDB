@@ -2,16 +2,26 @@
 #include "..\include\FileOperation.hpp"
 
 /**
- * @brief Builds a new IndexTree.
+ * @brief Builds an IndexTree with the given column.
  * 
- * @return std::shared_ptr<IndexTree::Tree> A shared pointer to the newly created IndexTree.
+ * @param column A vector of strings representing the column to build the tree with.
+ * @return A shared pointer to the built IndexTree.
  */
-std::shared_ptr<IndexTree::Tree> IndexTree::build()
+std::shared_ptr<IndexTree::Tree> IndexTree::build(const std::vector<std::string> &column)
 {
     std::shared_ptr<IndexTree::Tree> tree = std::make_shared<IndexTree::Tree>();
     tree->root = std::make_shared<LeafNode>();
     tree->seed = HashTable::get_rand();
+    tree->column = column;
     return tree;
+}
+
+std::vector<std::string> IndexTree::show_columns(const std::shared_ptr<IndexTree::Tree> &tree)
+{
+    std::vector<std::string> ret;
+    ret = tree->column;
+    ret.push_back(tree->cnt + " rows in set.");
+    return ret;
 }
 
 /**
@@ -174,10 +184,10 @@ inline bool IndexTree::in_leaf(std::shared_ptr<IndexTree::LeafNode> leaf, const 
  * @param key The key to insert.
  * @param data The data to associate with the key.
  */
-void IndexTree::insert(std::shared_ptr<IndexTree::Tree> tree, const std::string &key, const std::vector<std::pair<std::string, std::string>> &data)
+void IndexTree::insert(std::shared_ptr<IndexTree::Tree> tree, const std::string &key, const std::vector<std::string> &data)
 {
     if (tree == nullptr)
-        tree = build();
+        return;
     auto now = IndexTree::find_leaf(tree, key);
     assert(now != nullptr);
     if (IndexTree::in_leaf(now, key))
@@ -197,6 +207,7 @@ void IndexTree::insert(std::shared_ptr<IndexTree::Tree> tree, const std::string 
         }
     }
     now->datas[key] = data;
+    tree->cnt++;
     IndexTree::merge_map(now, tree->seed);
     if (now->datas.size() == IndexTree::max_children)
     {
@@ -419,6 +430,7 @@ void IndexTree::remove(std::shared_ptr<IndexTree::Tree> tree, const std::string 
     assert(now != nullptr);
     if (!IndexTree::in_leaf(now, key))
         return;
+    tree->cnt--;
     if (now->datas.size() == 1)
     {
         if (now == tree->root)

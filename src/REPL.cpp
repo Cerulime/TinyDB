@@ -129,7 +129,7 @@ Runtime::Statement REPL::parse_where(Runtime::Statement statement, const std::st
     last_size = now_size;
     success = process_input('\'');
     now_size = statement.datas.size();
-    if (!success || now_size != last_size + 1 || p != len - 2)
+    if (!success || now_size != last_size + 1 || input[p+1] != ';')
         return REPL::error_statement(input, __func__);
     
     return statement;
@@ -148,7 +148,7 @@ Runtime::Statement REPL::parse_datas(Runtime::Statement statement, const std::st
 {
     auto last_size = statement.datas.size();
 
-    while (p < len && input[p] != ';')
+    while (p < len && input[p] != ';' && input[p] != eof)
     {
         for (int i = 0; p + i < len; i++)
         {
@@ -189,7 +189,7 @@ Runtime::Statement REPL::parse_statement(const std::string &input_raw)
         
         p = p + 2;
         statement = REPL::parse_datas(statement, input, len, p, ')');
-        if (!Runtime::valid_statement(statement) || input[p] != ';')
+        if (!Runtime::valid_statement(statement) || input[p+1] != ';')
             return REPL::error_statement(input, __func__);
         
         return statement;
@@ -206,7 +206,7 @@ Runtime::Statement REPL::parse_statement(const std::string &input_raw)
         
         p = p + 9;
         statement = REPL::parse_datas(statement, input, len, p, ')');
-        if (!Runtime::valid_statement(statement) || input[p] != ';')
+        if (!Runtime::valid_statement(statement) || input[p+1] != ';')
             return REPL::error_statement(input, __func__);
 
         return statement;
@@ -252,11 +252,14 @@ Runtime::Statement REPL::parse_statement(const std::string &input_raw)
         if (!process_input('='))
             return REPL::error_statement(input, __func__);
 
-        p = p + 2;
+        p = p + 3;
         if (!process_input('\''))
             return REPL::error_statement(input, __func__);
 
         p = p + 1;
+        if (input.compare(p + 1, 5, "WHERE"))
+            return REPL::error_statement(input, __func__);
+        p = p + 7;
         statement = REPL::parse_where(statement, input, len, p);
         return statement;
     }

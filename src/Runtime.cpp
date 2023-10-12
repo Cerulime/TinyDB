@@ -1,34 +1,34 @@
 #include "..\include\Runtime.hpp"
 
-bool Runtime::valid_statement(const Runtime::Statement &statement)
+bool Runtime::valid_statement(const Statement &statement)
 {
-    return statement.opt != Runtime::Operation::ERRORP;
+    return statement.opt != Operation::ERRORP;
 }
 
-std::vector<std::string> Runtime::run_statement(const Runtime::Statement &statement)
+std::vector<std::string> Runtime::run_statement(const Statement &statement)
 {
     std::vector<std::string> result;
     std::string key;
     switch (statement.opt)
     {
-        case Runtime::Operation::CREATE:
-            Runtime::tree = IndexTree::build(statement.datas);
-            result = IndexTree::show_columns(Runtime::tree);
+        case Operation::CREATE:
+            tree = IndexTree::build(statement.datas);
+            result = IndexTree::show_columns(tree);
             break;
-        case Runtime::Operation::INSERT:
+        case Operation::INSERT:
             for (auto &i : statement.datas)
                 key += i;
-            IndexTree::insert(Runtime::tree, key, statement.datas);
-            result = IndexTree::show_columns(Runtime::tree);
+            IndexTree::insert(tree, key, statement.datas);
+            result = IndexTree::show_columns(tree);
             break;
-        case Runtime::Operation::DELETE:
+        case Operation::DELETE:
         {
             key = statement.datas[1];
-            std::vector<std::shared_ptr<IndexTree::LeafNode>> leafs = IndexTree::fuzzy_find_leaf(Runtime::tree, key);
+            std::vector<std::shared_ptr<IndexTree::LeafNode>> leafs = IndexTree::fuzzy_find_leaf(tree, key);
             std::vector<std::string> keys;
             int index = 0;
-            auto size = Runtime::tree->column.size();
-            while (index < size && Runtime::tree->column[index] != statement.datas[0])
+            auto size = tree->column.size();
+            while (index < size && tree->column[index] != statement.datas[0])
                 index++;
             for (auto &leaf : leafs)
                 for (auto &data : leaf->datas)
@@ -36,22 +36,22 @@ std::vector<std::string> Runtime::run_statement(const Runtime::Statement &statem
                         if (data.second[index].find(key) != std::string::npos)
                             keys.push_back(data.first);
             for (auto &true_key : keys)
-                IndexTree::remove(Runtime::tree, true_key);
-            result = IndexTree::show_columns(Runtime::tree);
+                IndexTree::remove(tree, true_key);
+            result = IndexTree::show_columns(tree);
             break;
         }
-        case Runtime::Operation::UPDATE:
+        case Operation::UPDATE:
         {
             key = statement.datas[3];
-            std::vector<std::shared_ptr<IndexTree::LeafNode>> leafs = IndexTree::fuzzy_find_leaf(Runtime::tree, key);
+            std::vector<std::shared_ptr<IndexTree::LeafNode>> leafs = IndexTree::fuzzy_find_leaf(tree, key);
             std::vector<std::string> keys;
             std::vector<std::vector<std::string>> new_datas;
             int index = 0;
-            auto size = Runtime::tree->column.size();
-            while (index < size && Runtime::tree->column[index] != statement.datas[2])
+            auto size = tree->column.size();
+            while (index < size && tree->column[index] != statement.datas[2])
                 index++;
             int index_new = 0;
-            while (index_new < size && Runtime::tree->column[index_new] != statement.datas[0])
+            while (index_new < size && tree->column[index_new] != statement.datas[0])
                 index_new++;
             for (auto &leaf : leafs)
                 for (auto &data : leaf->datas)
@@ -65,22 +65,22 @@ std::vector<std::string> Runtime::run_statement(const Runtime::Statement &statem
                         }
             for (int i = 0; i < keys.size(); i++)
             {
-                IndexTree::remove(Runtime::tree, keys[i]);
+                IndexTree::remove(tree, keys[i]);
                 std::string new_key;
                 for (auto &j : new_datas[i])
                     new_key += j;
-                IndexTree::insert(Runtime::tree, new_key, new_datas[i]);
+                IndexTree::insert(tree, new_key, new_datas[i]);
             }
-            result = IndexTree::show_columns(Runtime::tree);
+            result = IndexTree::show_columns(tree);
             break;
         }
-        case Runtime::Operation::SELECT:
+        case Operation::SELECT:
         {
             key = statement.datas[1];
-            std::vector<std::shared_ptr<IndexTree::LeafNode>> leafs = IndexTree::fuzzy_find_leaf(Runtime::tree, key);
+            std::vector<std::shared_ptr<IndexTree::LeafNode>> leafs = IndexTree::fuzzy_find_leaf(tree, key);
             int index = 0;
-            auto size = Runtime::tree->column.size();
-            while (index < size && Runtime::tree->column[index] != statement.datas[0])
+            auto size = tree->column.size();
+            while (index < size && tree->column[index] != statement.datas[0])
                 index++;
             for (auto &leaf : leafs)
                 for (auto &data : leaf->datas)

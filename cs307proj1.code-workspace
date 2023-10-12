@@ -51,7 +51,9 @@
 			"iterator": "cpp",
 			"numeric": "cpp",
 			"random": "cpp",
-			"map": "cpp"
+			"map": "cpp",
+			"mutex": "cpp",
+			"condition_variable": "cpp"
 		}
 	}
 }

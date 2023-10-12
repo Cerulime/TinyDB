@@ -5,10 +5,10 @@ std::string REPL::now_input = "None.";
 
 void REPL::welcome()
 {
-    std::cout << REPL::BANNER << std::endl;
+    std::cout << BANNER << std::endl;
     std::cout << "This is TinyDB. Welcome!" << std::endl << std::endl;
 
-    REPL::manual();
+    manual();
 }
 
 void REPL::manual()
@@ -16,9 +16,9 @@ void REPL::manual()
     std::cout << "Manual for u :)" << std::endl;
     std::cout << "========================" << std::endl;
 
-    std::cout << REPL::TAB << ".help -> Manual" << std::endl;
-    std::cout << REPL::TAB << ".last -> Last input" << std::endl;
-    std::cout << REPL::TAB << ".exit -> Exit" << std::endl;
+    std::cout << TAB << ".help -> Manual" << std::endl;
+    std::cout << TAB << ".last -> Last input" << std::endl;
+    std::cout << TAB << ".exit -> Exit" << std::endl;
 }
 
 void REPL::prompt()
@@ -28,11 +28,11 @@ void REPL::prompt()
 
 void REPL::start()
 {
-    REPL::prompt();
+    prompt();
     char input[210];
     std::cin.getline(input, 200);
-    REPL::last_input = REPL::now_input;
-    REPL::now_input = input;
+    last_input = now_input;
+    now_input = input;
 }
 
 /**
@@ -45,8 +45,8 @@ void REPL::start()
 bool REPL::parse_meta_cmd(const std::string &input)
 {
     std::unordered_map<std::string, std::function<bool()>> commands = {
-        {".help", []() { REPL::manual(); return true; }},
-        {".last", []() { std::cout << REPL::last_input << std::endl; return true; }},
+        {".help", []() { manual(); return true; }},
+        {".last", []() { std::cout << last_input << std::endl; return true; }},
         {".exit", []() { std::cout << "Exiting..."; return false; }}
     };
 
@@ -94,7 +94,7 @@ Runtime::Statement REPL::parse_table(Runtime::Statement statement, const std::st
         break;
     }
     if (statement.table.empty())
-        return REPL::error_statement(input, __func__);
+        return error_statement(input, __func__);
     return statement;
 }
 
@@ -123,14 +123,14 @@ Runtime::Statement REPL::parse_where(Runtime::Statement statement, const std::st
     success = process_input(' ');
     auto now_size = statement.datas.size();
     if (!success || now_size != last_size + 1 || input.compare(p + 1, 4, "LIKE"))
-        return REPL::error_statement(input, __func__);
+        return error_statement(input, __func__);
 
     p = p + 7;
     last_size = now_size;
     success = process_input('\'');
     now_size = statement.datas.size();
     if (!success || now_size != last_size + 1 || input[p+1] != ';')
-        return REPL::error_statement(input, __func__);
+        return error_statement(input, __func__);
     
     return statement;
 }
@@ -163,7 +163,7 @@ Runtime::Statement REPL::parse_datas(Runtime::Statement statement, const std::st
 
     auto now_size = statement.datas.size();
     if(now_size == last_size)
-        return REPL::error_statement(input, __func__);
+        return error_statement(input, __func__);
     return statement;
 }
 
@@ -183,14 +183,14 @@ Runtime::Statement REPL::parse_statement(const std::string &input_raw)
         statement.opt = Runtime::Operation::CREATE;
 
         std::size_t p = 7;
-        statement = REPL::parse_table(statement, input, len, p);
+        statement = parse_table(statement, input, len, p);
         if (!Runtime::valid_statement(statement))
-            return REPL::error_statement(input, __func__);
+            return error_statement(input, __func__);
         
         p = p + 2;
-        statement = REPL::parse_datas(statement, input, len, p, ')');
+        statement = parse_datas(statement, input, len, p, ')');
         if (!Runtime::valid_statement(statement) || input[p+1] != ';')
-            return REPL::error_statement(input, __func__);
+            return error_statement(input, __func__);
         
         return statement;
     }
@@ -199,15 +199,15 @@ Runtime::Statement REPL::parse_statement(const std::string &input_raw)
         statement.opt = Runtime::Operation::INSERT;
 
         std::size_t p = 12;
-        statement = REPL::parse_table(statement, input, len, p);
+        statement = parse_table(statement, input, len, p);
 
         if (!Runtime::valid_statement(statement) || input.compare(p + 1, 6, "VALUES"))
-            return REPL::error_statement(input, __func__);
+            return error_statement(input, __func__);
         
         p = p + 9;
-        statement = REPL::parse_datas(statement, input, len, p, ')');
+        statement = parse_datas(statement, input, len, p, ')');
         if (!Runtime::valid_statement(statement) || input[p+1] != ';')
-            return REPL::error_statement(input, __func__);
+            return error_statement(input, __func__);
 
         return statement;
     }
@@ -216,17 +216,17 @@ Runtime::Statement REPL::parse_statement(const std::string &input_raw)
         statement.opt = Runtime::Operation::DELETE;
 
         std::size_t p = 12;
-        statement = REPL::parse_table(statement, input, len, p);
+        statement = parse_table(statement, input, len, p);
 
         if (!Runtime::valid_statement(statement))
-            return REPL::error_statement(input, __func__);
+            return error_statement(input, __func__);
         if (input[p] == ';')
             return statement;
         
         if (input.compare(p + 1, 5, "WHERE"))
-            return REPL::error_statement(input, __func__);
+            return error_statement(input, __func__);
         p = p + 7;
-        statement = REPL::parse_where(statement, input, len, p);
+        statement = parse_where(statement, input, len, p);
         return statement;
     }
     else if (!input.compare(0, 6, "UPDATE"))
@@ -234,10 +234,10 @@ Runtime::Statement REPL::parse_statement(const std::string &input_raw)
         statement.opt = Runtime::Operation::UPDATE;
 
         std::size_t p = 7;
-        statement = REPL::parse_table(statement, input, len, p);
+        statement = parse_table(statement, input, len, p);
         
         if (!Runtime::valid_statement(statement) || input.compare(p + 1, 3, "SET"))
-            return REPL::error_statement(input, __func__);
+            return error_statement(input, __func__);
 
         auto process_input = [&statement, &input, &p](char delimiter) -> bool {
             auto next = input.find(delimiter, p);
@@ -250,17 +250,17 @@ Runtime::Statement REPL::parse_statement(const std::string &input_raw)
 
         p = p + 5;
         if (!process_input('='))
-            return REPL::error_statement(input, __func__);
+            return error_statement(input, __func__);
 
         p = p + 3;
         if (!process_input('\''))
-            return REPL::error_statement(input, __func__);
+            return error_statement(input, __func__);
 
         p = p + 1;
         if (input.compare(p + 1, 5, "WHERE"))
-            return REPL::error_statement(input, __func__);
+            return error_statement(input, __func__);
         p = p + 7;
-        statement = REPL::parse_where(statement, input, len, p);
+        statement = parse_where(statement, input, len, p);
         return statement;
     }
     else if (!input.compare(0, 6, "SELECT"))
@@ -268,21 +268,21 @@ Runtime::Statement REPL::parse_statement(const std::string &input_raw)
         statement.opt = Runtime::Operation::SELECT;
 
         std::size_t p = 7;
-        statement = REPL::parse_datas(statement, input, len, p, ' ');
+        statement = parse_datas(statement, input, len, p, ' ');
         if (!Runtime::valid_statement(statement) || input.compare(p + 1, 4, "FROM"))
-            return REPL::error_statement(input, __func__);
+            return error_statement(input, __func__);
         
         p = p + 6;
-        statement = REPL::parse_table(statement, input, len, p);
+        statement = parse_table(statement, input, len, p);
         if (!Runtime::valid_statement(statement) || input.compare(p + 1, 5, "WHERE"))
-            return REPL::error_statement(input, __func__);
+            return error_statement(input, __func__);
         
         p = p + 7;
-        statement = REPL::parse_where(statement, input, len, p);
+        statement = parse_where(statement, input, len, p);
         return statement;
     }
     else
     {
-        return REPL::error_statement(input, __func__);
+        return error_statement(input, __func__);
     }
 }

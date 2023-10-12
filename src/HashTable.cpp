@@ -67,23 +67,23 @@ std::vector<int> HashTable::create_map(const std::string &s, unsigned long long 
     int len = s.length();
     for (int i = 0; i < len; i++)
     {
-        char ch[HashTable::str_len] = {};
+        char ch[str_len] = {};
         for (int j = 0; i + j < len; j++)
         {
             ch[j] = s[i + j];
-            const auto &[lw, hg] = HashTable::get_hash(ch, j+1, seed);
-            for (int k = 1; k <= HashTable::k_hash; k++)
-                index.push_back((lw + hg*k) % HashTable::prime);
+            const auto &[lw, hg] = get_hash(ch, j+1, seed);
+            for (int k = 1; k <= k_hash; k++)
+                index.push_back((lw + hg*k) % prime);
         }
     }
     return index;
 }
 
-bool HashTable::find(const std::bitset<HashTable::prime> &map, const unsigned long long &seed, const std::string &s)
+bool HashTable::find(const std::bitset<prime> &map, const unsigned long long &seed, const std::string &s)
 {
-    const auto &[lw, hg] = HashTable::get_hash(s.data(), s.length(), seed);
-    for (int k = 1; k <= HashTable::k_hash; k++)
-        if (!map[(lw + hg*k) % HashTable::prime])
+    const auto &[lw, hg] = get_hash(s.data(), s.length(), seed);
+    for (int k = 1; k <= k_hash; k++)
+        if (!map[(lw + hg*k) % prime])
             return false;
     return true;
 }

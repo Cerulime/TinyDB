@@ -23,4 +23,6 @@ namespace Runtime
     
     bool valid_statement(const Statement &);
     std::vector<std::string> run_statement(const Statement &);
+    bool schedule();
+    bool is_finish();
 }

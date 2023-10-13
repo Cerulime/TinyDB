@@ -1,9 +1,19 @@
 #pragma once
 #include "Runtime.hpp"
 
-namespace REPL {
-    inline const std::string TAB = "    ";
-    inline const std::string BANNER = R"(
+class REPL
+{
+public:
+    REPL();
+    static void welcome();
+    void start();
+    const std::string get_now_input() const;
+    bool parse_meta_cmd(const std::string &);
+    static Runtime::Statement parse_statement(const std::string &);
+
+private:
+    inline static const std::string TAB = "    ";
+    inline static const std::string BANNER = R"(
  _____  _               ______ ______ 
 |_   _|(_)              |  _  \| ___ \
   | |   _  _ __   _   _ | | | || |_/ /
@@ -13,18 +23,12 @@ namespace REPL {
                    __/ |              
                   |___/               
 )";
-
-    extern std::string last_input;
-    extern std::string now_input;
-
-    void welcome();
-    void manual();
-    void prompt();
-    void start();
-    bool parse_meta_cmd(const std::string &);
-    Runtime::Statement parse_statement(const std::string &);
-    Runtime::Statement parse_table(Runtime::Statement, const std::string_view &,const std::size_t &, std::size_t &);
-    Runtime::Statement parse_where(Runtime::Statement, const std::string_view &,const std::size_t &, std::size_t &);
-    Runtime::Statement parse_datas(Runtime::Statement, const std::string_view &,const std::size_t &, std::size_t &, const char &);
-    Runtime::Statement error_statement(const std::string_view &, const std::string &);
-}
+    std::string last_input;
+    std::string now_input;
+    static void manual();
+    static void prompt();
+    static Runtime::Statement parse_table(Runtime::Statement, const std::string_view &, const std::size_t &, std::size_t &);
+    static Runtime::Statement parse_where(Runtime::Statement, const std::string_view &, const std::size_t &, std::size_t &);
+    static Runtime::Statement parse_datas(Runtime::Statement, const std::string_view &, const std::size_t &, std::size_t &, const char &);
+    static const Runtime::Statement error_statement(const std::string_view &, const std::string &);
+};

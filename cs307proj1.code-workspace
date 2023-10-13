@@ -58,7 +58,13 @@
 			"ctime": "cpp",
 			"ratio": "cpp",
 			"thread": "cpp",
-			"variant": "cpp"
+			"variant": "cpp",
+			"any": "cpp",
+			"forward_list": "cpp",
+			"list": "cpp",
+			"unordered_set": "cpp",
+			"set": "cpp",
+			"iomanip": "cpp"
 		}
 	}
 }

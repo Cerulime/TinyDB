@@ -2,27 +2,30 @@
 
 int main()
 {
-    REPL::welcome();
-    while(true)
+    REPL repl;
+    repl.welcome();
+    Runtime runtime;
+    while (true)
     {
-        REPL::start();
-        if (REPL::now_input[0] == '.')
+        repl.start();
+        std::string now_input = repl.get_now_input();
+        if (now_input[0] == '.')
         {
-            if (!REPL::parse_meta_cmd(REPL::now_input))
+            if (!repl.parse_meta_cmd(now_input))
                 break;
         }
         else
         {
-            Runtime::Statement statement = REPL::parse_statement(REPL::now_input);
+            Runtime::Statement statement = REPL::parse_statement(now_input);
             if (!Runtime::valid_statement(statement))
                 continue;
-            std::vector<std::string> result = Runtime::run_statement(statement);
-            std::thread worker(Runtime::scheduler);
+            std::vector<std::string> result = runtime.run_statement(statement);
+            std::thread worker(&Runtime::scheduler, &runtime);
             worker.detach();
         }
     }
-    if (!Runtime::is_finish())
-        Runtime::scheduler();
+    if (!runtime.is_finish())
+        runtime.scheduler();
     std::cout << "Goodbye TinyDB!" << std::endl;
     return 0;
 }

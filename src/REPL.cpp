@@ -1,12 +1,16 @@
 #include "..\include\REPL.hpp"
 
-std::string REPL::last_input = "";
-std::string REPL::now_input = "None.";
+REPL::REPL()
+{
+    this->last_input = "";
+    this->now_input = "None.";
+}
 
 void REPL::welcome()
 {
     std::cout << BANNER << std::endl;
-    std::cout << "This is TinyDB. Welcome!" << std::endl << std::endl;
+    std::cout << "This is TinyDB. Welcome!" << std::endl
+              << std::endl;
 
     manual();
 }
@@ -31,24 +35,32 @@ void REPL::start()
     prompt();
     char input[210];
     std::cin.getline(input, 200);
-    last_input = now_input;
-    now_input = input;
+    this->last_input = this->now_input;
+    this->now_input = input;
+}
+
+const std::string REPL::get_now_input() const
+{
+    return this->now_input;
 }
 
 /**
- * @brief Parses the meta command input and executes the corresponding command.
- * 
+ * @brief Parses the meta command input and executes the corresponding function.
+ *
  * @param input The input string containing the meta command.
- * @return true If the command is executed successfully.
- * @return false If the command is ".exit".
+ * @return true If the meta command is valid and executed successfully.
+ * @return false If the meta command is ".exit".
  */
 bool REPL::parse_meta_cmd(const std::string &input)
 {
+    auto me = this;
     std::unordered_map<std::string, std::function<bool()>> commands = {
-        {".help", []() { manual(); return true; }},
-        {".last", []() { std::cout << last_input << std::endl; return true; }},
-        {".exit", []() { std::cout << "Exiting..."; return false; }}
-    };
+        {".help", []()
+         { manual(); return true; }},
+        {".last", [&me]()
+         { std::cout << me->last_input << std::endl; return true; }},
+        {".exit", []()
+         { std::cout << "Exiting..."; return false; }}};
 
     auto it = commands.find(input);
     if (it != commands.end())
@@ -60,30 +72,23 @@ bool REPL::parse_meta_cmd(const std::string &input)
     }
 }
 
-/**
- * @brief This function is used to handle unknown statements in the REPL.
- * 
- * @param input The input string that contains the unknown statement.
- * @param caller The name of the function that called this error statement function.
- * @return A null statement from the Runtime namespace.
- */
-Runtime::Statement REPL::error_statement(const std::string_view &input, const std::string &caller)
+const Runtime::Statement REPL::error_statement(const std::string_view &input, const std::string &caller)
 {
     std::cout << "Caller function:" << caller << std::endl;
     std::cout << "Unknown statement: " << input << std::endl;
-    return Runtime::null_statement;
+    return Runtime::Statement(Runtime::Operation::ERRORP, "", {});
 }
 
 /**
  * Parses the table name from the input string and sets it in the given statement object.
- * 
+ *
  * @param statement The statement object to set the table name in.
  * @param input The input string to parse the table name from.
  * @param len The length of the input string.
  * @param p The current position in the input string.
- * @return The statement object with the table name set, or an error statement if the table name is empty.
+ * @return The statement object with the table name set, or an error statement if the table name could not be parsed.
  */
-Runtime::Statement REPL::parse_table(Runtime::Statement statement, const std::string_view &input,const std::size_t &len, std::size_t &p)
+Runtime::Statement REPL::parse_table(Runtime::Statement statement, const std::string_view &input, const std::size_t &len, std::size_t &p)
 {
     for (int i = 0; p + i < len; i++)
     {
@@ -99,17 +104,18 @@ Runtime::Statement REPL::parse_table(Runtime::Statement statement, const std::st
 }
 
 /**
- * @brief Parses the "WHERE" clause of a SQL statement.
- * 
- * @param statement The statement to be parsed.
- * @param input The input string to be parsed.
+ * Parses the input string to extract the WHERE clause of a SQL statement.
+ *
+ * @param statement The statement object to store the extracted data.
+ * @param input The input string to parse.
  * @param len The length of the input string.
  * @param p The current position in the input string.
- * @return Runtime::Statement The parsed statement.
+ * @return The statement object with the extracted data, or an error statement if parsing fails.
  */
-Runtime::Statement REPL::parse_where(Runtime::Statement statement, const std::string_view &input,const std::size_t &len, std::size_t &p)
+Runtime::Statement REPL::parse_where(Runtime::Statement statement, const std::string_view &input, const std::size_t &len, std::size_t &p)
 {
-    auto process_input = [&statement, &input, &p](char delimiter) -> bool {
+    auto process_input = [&statement, &input, &p](char delimiter) -> bool
+    {
         auto next = input.find(delimiter, p);
         if (next == std::string::npos)
             return false;
@@ -129,22 +135,24 @@ Runtime::Statement REPL::parse_where(Runtime::Statement statement, const std::st
     last_size = now_size;
     success = process_input('\'');
     now_size = statement.datas.size();
-    if (!success || now_size != last_size + 1 || input[p+1] != ';')
+    if (!success || now_size != last_size + 1 || input[p + 1] != ';')
         return error_statement(input, __func__);
-    
+
     return statement;
 }
 
 /**
- * Parses the input string to extract data statements separated by commas and semicolons.
- * @param statement The statement to be updated with the extracted data.
+ * Parses the input string and extracts the data statements separated by commas.
+ *
+ * @param statement The statement object to store the extracted data statements.
  * @param input The input string to be parsed.
  * @param len The length of the input string.
  * @param p The current position in the input string.
  * @param eof The end of file character.
- * @return The updated statement with the extracted data.
+ *
+ * @return The statement object with the extracted data statements.
  */
-Runtime::Statement REPL::parse_datas(Runtime::Statement statement, const std::string_view &input,const std::size_t &len, std::size_t &p, const char &eof)
+Runtime::Statement REPL::parse_datas(Runtime::Statement statement, const std::string_view &input, const std::size_t &len, std::size_t &p, const char &eof)
 {
     auto last_size = statement.datas.size();
 
@@ -162,14 +170,14 @@ Runtime::Statement REPL::parse_datas(Runtime::Statement statement, const std::st
     }
 
     auto now_size = statement.datas.size();
-    if(now_size == last_size)
+    if (now_size == last_size)
         return error_statement(input, __func__);
     return statement;
 }
 
 /**
  * @brief Parses the input string and returns a Runtime::Statement object.
- * 
+ *
  * @param input_raw The input string to be parsed.
  * @return Runtime::Statement The parsed statement object.
  */
@@ -186,12 +194,12 @@ Runtime::Statement REPL::parse_statement(const std::string &input_raw)
         statement = parse_table(statement, input, len, p);
         if (!Runtime::valid_statement(statement))
             return error_statement(input, __func__);
-        
+
         p = p + 2;
         statement = parse_datas(statement, input, len, p, ')');
-        if (!Runtime::valid_statement(statement) || input[p+1] != ';')
+        if (!Runtime::valid_statement(statement) || input[p + 1] != ';')
             return error_statement(input, __func__);
-        
+
         return statement;
     }
     else if (!input.compare(0, 11, "INSERT INTO"))
@@ -203,10 +211,10 @@ Runtime::Statement REPL::parse_statement(const std::string &input_raw)
 
         if (!Runtime::valid_statement(statement) || input.compare(p + 1, 6, "VALUES"))
             return error_statement(input, __func__);
-        
+
         p = p + 9;
         statement = parse_datas(statement, input, len, p, ')');
-        if (!Runtime::valid_statement(statement) || input[p+1] != ';')
+        if (!Runtime::valid_statement(statement) || input[p + 1] != ';')
             return error_statement(input, __func__);
 
         return statement;
@@ -222,7 +230,7 @@ Runtime::Statement REPL::parse_statement(const std::string &input_raw)
             return error_statement(input, __func__);
         if (input[p] == ';')
             return statement;
-        
+
         if (input.compare(p + 1, 5, "WHERE"))
             return error_statement(input, __func__);
         p = p + 7;
@@ -235,11 +243,12 @@ Runtime::Statement REPL::parse_statement(const std::string &input_raw)
 
         std::size_t p = 7;
         statement = parse_table(statement, input, len, p);
-        
+
         if (!Runtime::valid_statement(statement) || input.compare(p + 1, 3, "SET"))
             return error_statement(input, __func__);
 
-        auto process_input = [&statement, &input, &p](char delimiter) -> bool {
+        auto process_input = [&statement, &input, &p](char delimiter) -> bool
+        {
             auto next = input.find(delimiter, p);
             if (next == std::string::npos)
                 return false;
@@ -271,12 +280,12 @@ Runtime::Statement REPL::parse_statement(const std::string &input_raw)
         statement = parse_datas(statement, input, len, p, ' ');
         if (!Runtime::valid_statement(statement) || input.compare(p + 1, 4, "FROM"))
             return error_statement(input, __func__);
-        
+
         p = p + 6;
         statement = parse_table(statement, input, len, p);
         if (!Runtime::valid_statement(statement) || input.compare(p + 1, 5, "WHERE"))
             return error_statement(input, __func__);
-        
+
         p = p + 7;
         statement = parse_where(statement, input, len, p);
         return statement;

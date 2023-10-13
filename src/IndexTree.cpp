@@ -1,21 +1,28 @@
 #include "..\include\IndexTree.hpp"
 #include "..\include\FileOperation.hpp"
 
+IndexTree::IndexTree() : hash_table() {}
+
 /**
  * @brief Builds an IndexTree with the given column.
- * 
- * @param column A vector of strings representing the column to build the tree with.
- * @return A shared pointer to the built IndexTree.
+ *
+ * @param column The column to build the IndexTree with.
+ * @return std::shared_ptr<IndexTree::Tree> A shared pointer to the built IndexTree.
  */
 std::shared_ptr<IndexTree::Tree> IndexTree::build(const std::vector<std::string> &column)
 {
     std::shared_ptr<Tree> tree = std::make_shared<Tree>();
     tree->root = std::make_shared<LeafNode>();
-    tree->seed = HashTable::get_rand();
+    tree->seed = this->hash_table.get_rand();
     tree->column = column;
     return tree;
 }
 
+/**
+ * Returns a vector of strings containing the column names and the number of rows in the given tree.
+ * @param tree A shared pointer to the tree whose columns are to be shown.
+ * @return A vector of strings containing the column names and the number of rows in the given tree.
+ */
 std::vector<std::string> IndexTree::show_columns(const std::shared_ptr<Tree> &tree)
 {
     std::vector<std::string> ret;
@@ -26,21 +33,22 @@ std::vector<std::string> IndexTree::show_columns(const std::shared_ptr<Tree> &tr
 
 /**
  * @brief Merge the map of a leaf node with a given seed.
- * 
- * @param node The leaf node to merge its map.
- * @param seed The seed to use for creating the map.
+ *
+ * @param node The leaf node to merge the map.
+ * @param seed The seed used to create the map.
  */
 void IndexTree::merge_map(std::shared_ptr<LeafNode> node, const unsigned long long &seed)
 {
     node->map.reset();
     for (const auto &[key, data] : node->datas)
-        node->map |= HashTable::create_map(key, seed);
+        node->map |= this->hash_table.create_map(key, seed);
 }
 
 /**
- * Merges the bitmaps of all children nodes of the given internal node and sets the merged bitmap to the node's map.
- * If the node's children are leaf nodes, the bitmaps of the leaf nodes are merged. Otherwise, the bitmaps of the internal nodes are merged.
- * @param node A shared pointer to the internal node whose children's bitmaps are to be merged.
+ * Merges the bitmaps of all children of the given internal node into the node's own bitmap.
+ * If the node's children are leaf nodes, their bitmaps are ORed together.
+ * If the node's children are internal nodes, their bitmaps are ORed together.
+ * @param node The internal node whose children's bitmaps are to be merged.
  */
 void IndexTree::merge_map(std::shared_ptr<InternalNode> node)
 {
@@ -57,8 +65,8 @@ void IndexTree::merge_map(std::shared_ptr<InternalNode> node)
 
 /**
  * @brief Updates the map of each ancestor of the given node by merging the maps of its children.
- * 
- * @param ancestor A shared pointer to the ancestor node whose map needs to be updated.
+ *
+ * @param ancestor A shared pointer to the ancestor node to update the map for.
  */
 void IndexTree::update_map(std::shared_ptr<InternalNode> ancestor)
 {
@@ -70,12 +78,10 @@ void IndexTree::update_map(std::shared_ptr<InternalNode> ancestor)
 }
 
 /**
- * Splits a node in the index tree and returns the new internal node.
- * If the node is a leaf node, it splits the leaf node into two leaf nodes and returns the new internal node.
- * If the node is an internal node, it splits the internal node into two internal nodes and returns the new internal node.
+ * Splits a node into two nodes when it is full and updates the parent node accordingly.
  * @param node The node to be split.
  * @param seed The seed used for random number generation.
- * @return The new internal node.
+ * @return A shared pointer to the new parent node if the original parent node was null, otherwise a shared pointer to the original parent node.
  */
 std::shared_ptr<IndexTree::InternalNode> IndexTree::split(std::shared_ptr<Node> node, const unsigned long long &seed)
 {
@@ -196,7 +202,7 @@ void IndexTree::insert(std::shared_ptr<Tree> tree, const std::string &key, const
             auto last = internal->children.rbegin();
             auto child = last->second;
             internal->children.erase((++last).base());
-            internal->children[key]=child;
+            internal->children[key] = child;
             if (child->is_leaf)
                 break;
             internal = std::dynamic_pointer_cast<InternalNode>(child);
@@ -218,10 +224,10 @@ void IndexTree::insert(std::shared_ptr<Tree> tree, const std::string &key, const
 }
 
 /**
- * Finds the leaf node in the tree that contains the given key.
- * @param tree The tree to search in.
+ * Finds the leaf node in the given tree that contains the specified key.
+ * @param tree The tree to search.
  * @param key The key to search for.
- * @return A shared pointer to the leaf node that contains the key, or nullptr if the key is not found.
+ * @return A shared pointer to the leaf node containing the key, or nullptr if the key is not found.
  */
 std::shared_ptr<IndexTree::LeafNode> IndexTree::find_leaf(std::shared_ptr<Tree> tree, const std::string &key)
 {
@@ -242,15 +248,17 @@ std::shared_ptr<IndexTree::LeafNode> IndexTree::find_leaf(std::shared_ptr<Tree> 
 }
 
 /**
- * Searches for all leaf nodes in the given tree that contain the given key.
+ * This function performs a fuzzy search for a given key in the IndexTree.
+ * It returns a vector of shared pointers to the LeafNodes that contain the key.
  * @param tree A shared pointer to the tree to search in.
  * @param key The key to search for.
- * @return A vector of shared pointers to the leaf nodes that contain the key.
+ * @return A vector of shared pointers to the LeafNodes that contain the key.
  */
 std::vector<std::shared_ptr<IndexTree::LeafNode>> IndexTree::fuzzy_find_leaf(std::shared_ptr<Tree> tree, const std::string &key)
 {
-    auto hash = HashTable::get_index(key, tree->seed);
-    auto is_all_inmap = [&hash](const std::bitset<HashTable::PRIME> &map) -> bool {
+    auto hash = this->hash_table.get_index(key, tree->seed);
+    auto is_all_inmap = [&hash](const std::bitset<HashTable::PRIME> &map) -> bool
+    {
         for (const auto &pos : hash)
             if (!map[pos])
                 return false;
@@ -292,8 +300,10 @@ std::vector<std::shared_ptr<IndexTree::LeafNode>> IndexTree::fuzzy_find_leaf(std
 }
 
 /**
- * Merges the given node with its sibling if necessary, and updates the index tree accordingly.
- * 
+ * Merges a node with its sibling if it has less than max_children/2 children.
+ * If the node is a leaf node, it merges with its sibling leaf node.
+ * If the node is an internal node, it merges with its sibling internal node.
+ * If the node's parent has less than max_children/2 children after the merge, the parent is merged with its sibling.
  * @param node The node to be merged.
  * @param seed The seed used for random number generation.
  */
@@ -307,14 +317,15 @@ void IndexTree::merge(std::shared_ptr<Node> node, const unsigned long long &seed
         if (father->children.size() == 1)
             return;
         auto now = std::dynamic_pointer_cast<LeafNode>(node);
-        auto get_brother = [](std::shared_ptr<LeafNode> now)->std::shared_ptr<LeafNode> {
+        auto get_brother = [](std::shared_ptr<LeafNode> now) -> std::shared_ptr<LeafNode>
+        {
             auto father = now->parent;
             auto it = std::prev(father->children.find(now->datas.rbegin()->first));
             if (it == father->children.begin())
                 return nullptr;
             return std::dynamic_pointer_cast<LeafNode>(it->second);
         };
-        
+
         auto brother = get_brother(now);
         if (brother == nullptr)
         {
@@ -364,7 +375,8 @@ void IndexTree::merge(std::shared_ptr<Node> node, const unsigned long long &seed
     else
     {
         auto now = std::dynamic_pointer_cast<InternalNode>(node);
-        auto get_brother = [](std::shared_ptr<InternalNode> now)->std::shared_ptr<InternalNode> {
+        auto get_brother = [](std::shared_ptr<InternalNode> now) -> std::shared_ptr<InternalNode>
+        {
             auto father = now->parent;
             auto it = std::prev(father->children.find(now->children.rbegin()->first));
             if (it == father->children.begin())
@@ -416,9 +428,9 @@ void IndexTree::merge(std::shared_ptr<Node> node, const unsigned long long &seed
 }
 
 /**
- * Removes the node with the given key from the tree.
+ * Removes a key from the index tree.
  * @param tree A shared pointer to the tree.
- * @param key The key of the node to be removed.
+ * @param key The key to be removed.
  */
 void IndexTree::remove(std::shared_ptr<Tree> tree, const std::string &key)
 {
@@ -451,7 +463,7 @@ void IndexTree::remove(std::shared_ptr<Tree> tree, const std::string &key)
             auto last = internal->children.rbegin();
             auto child = last->second;
             internal->children.erase((++last).base());
-            internal->children[second_last]=child;
+            internal->children[second_last] = child;
             if (child->is_leaf)
                 break;
             internal = std::dynamic_pointer_cast<InternalNode>(child);

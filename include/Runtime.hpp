@@ -2,8 +2,9 @@
 #include "IndexTree.hpp"
 #include "FileOperation.hpp"
 
-namespace Runtime
+class Runtime
 {
+public:
     enum class Operation
     {
         ERRORP,
@@ -18,12 +19,14 @@ namespace Runtime
         Operation opt;
         std::string table;
         std::vector<std::string> datas;
+        Statement(Operation opt = Operation::ERRORP, std::string table = "", std::vector<std::string> datas = {}) : opt(opt), table(table), datas(datas) {}
     };
-    inline const Statement null_statement = {Operation::ERRORP, "", {}};
-    extern std::shared_ptr<IndexTree::Tree> tree;
-    
-    bool valid_statement(const Statement &);
+    static bool valid_statement(const Statement &);
     std::vector<std::string> run_statement(const Statement &);
     void scheduler();
     bool is_finish();
-}
+
+private:
+    IndexTree cache;
+    FileOperation fileOp;
+};

@@ -19,7 +19,7 @@ std::string Serialization::base64encode(const char *bytes, const std::size_t &si
     return result;
 }
 
-void Serialization::base64decode(const std::string &str, char* bytes, const std::size_t &size)
+void Serialization::base64decode(const std::string &str, char *bytes, const std::size_t &size)
 {
     std::size_t len = str.size();
     std::size_t i = 0, j = 0;
@@ -55,7 +55,7 @@ void Serialization::base64decode(const std::string &str, char* bytes, const std:
 /**
  * Serializes a bitset map into a base64-encoded string.
  * @param map The bitset map to be serialized.
- * @return The base64-encoded string representation of the serialized map.
+ * @return A base64-encoded string representing the serialized bitset map.
  */
 std::string Serialization::serialize_map(const std::bitset<HashTable::PRIME> &map)
 {
@@ -65,9 +65,10 @@ std::string Serialization::serialize_map(const std::bitset<HashTable::PRIME> &ma
         bytes[i / 8] |= (map[i] << (i % 8));
     return Serialization::base64encode(bytes, size);
 }
+
 /**
  * @brief Deserializes a string into a bitset representing a hash table.
- * 
+ *
  * @param str The string to deserialize.
  * @return std::bitset<HashTable::PRIME> The deserialized bitset.
  * @throws std::runtime_error If there is an error during deserialization.

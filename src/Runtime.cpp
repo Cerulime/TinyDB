@@ -1,117 +1,120 @@
 #include "..\include\Runtime.hpp"
 
-std::shared_ptr<IndexTree::Tree> Runtime::tree;
-
 bool Runtime::valid_statement(const Statement &statement)
 {
     return statement.opt != Operation::ERRORP;
 }
 
+/**
+ * Executes a statement and returns the result as a vector of strings.
+ * @param statement The statement to execute.
+ * @return A vector of strings representing the result of the statement.
+ */
 std::vector<std::string> Runtime::run_statement(const Statement &statement)
 {
     std::vector<std::string> result;
     std::string key;
     switch (statement.opt)
     {
-        case Operation::CREATE:
-            tree = IndexTree::build(statement.datas);
-            result = IndexTree::show_columns(tree);
-            break;
-        case Operation::INSERT:
-            for (auto &i : statement.datas)
-                key += i + ",";
-            IndexTree::insert(tree, key, statement.datas);
-            result = IndexTree::show_columns(tree);
-            break;
-        case Operation::DELETE:
+    case Operation::CREATE:
+        this->cache.tree = this->cache.build(statement.datas);
+        result = this->cache.show_columns(this->cache.tree);
+        break;
+    case Operation::INSERT:
+        for (auto &i : statement.datas)
+            key += i + ",";
+        this->cache.insert(this->cache.tree, key, statement.datas);
+        result = this->cache.show_columns(this->cache.tree);
+        break;
+    case Operation::DELETE:
+    {
+        key = statement.datas[1];
+        std::vector<std::shared_ptr<IndexTree::LeafNode>> leafs = this->cache.fuzzy_find_leaf(this->cache.tree, key);
+        std::vector<std::string> keys;
+        int index = 0;
+        auto size = this->cache.tree->column.size();
+        while (index < size && this->cache.tree->column[index] != statement.datas[0])
+            index++;
+        for (auto &leaf : leafs)
+            for (auto &data : leaf->datas)
+                // if (data.first.find(key) != std::string::npos)
+                if (data.second[index].find(key) != std::string::npos)
+                    keys.push_back(data.first);
+        for (auto &true_key : keys)
+            this->cache.remove(this->cache.tree, true_key);
+        result = this->cache.show_columns(this->cache.tree);
+        break;
+    }
+    case Operation::UPDATE:
+    {
+        key = statement.datas[3];
+        std::vector<std::shared_ptr<IndexTree::LeafNode>> leafs = this->cache.fuzzy_find_leaf(this->cache.tree, key);
+        std::vector<std::string> keys;
+        std::vector<std::vector<std::string>> new_datas;
+        int index = 0;
+        auto size = this->cache.tree->column.size();
+        while (index < size && this->cache.tree->column[index] != statement.datas[2])
+            index++;
+        int index_new = 0;
+        while (index_new < size && this->cache.tree->column[index_new] != statement.datas[0])
+            index_new++;
+        for (auto &leaf : leafs)
+            for (auto &data : leaf->datas)
+                // if (data.first.find(key) != std::string::npos)
+                if (data.second[index].find(key) != std::string::npos)
+                {
+                    keys.push_back(data.first);
+                    std::vector<std::string> tmp = data.second;
+                    tmp[index_new] = statement.datas[1];
+                    new_datas.push_back(tmp);
+                }
+        for (int i = 0; i < keys.size(); i++)
         {
-            key = statement.datas[1];
-            std::vector<std::shared_ptr<IndexTree::LeafNode>> leafs = IndexTree::fuzzy_find_leaf(tree, key);
-            std::vector<std::string> keys;
-            int index = 0;
-            auto size = tree->column.size();
-            while (index < size && tree->column[index] != statement.datas[0])
-                index++;
-            for (auto &leaf : leafs)
-                for (auto &data : leaf->datas)
-                    // if (data.first.find(key) != std::string::npos)
-                        if (data.second[index].find(key) != std::string::npos)
-                            keys.push_back(data.first);
-            for (auto &true_key : keys)
-                IndexTree::remove(tree, true_key);
-            result = IndexTree::show_columns(tree);
-            break;
+            this->cache.remove(this->cache.tree, keys[i]);
+            std::string new_key;
+            for (auto &j : new_datas[i])
+                new_key += j + ",";
+            this->cache.insert(this->cache.tree, new_key, new_datas[i]);
         }
-        case Operation::UPDATE:
-        {
-            key = statement.datas[3];
-            std::vector<std::shared_ptr<IndexTree::LeafNode>> leafs = IndexTree::fuzzy_find_leaf(tree, key);
-            std::vector<std::string> keys;
-            std::vector<std::vector<std::string>> new_datas;
-            int index = 0;
-            auto size = tree->column.size();
-            while (index < size && tree->column[index] != statement.datas[2])
-                index++;
-            int index_new = 0;
-            while (index_new < size && tree->column[index_new] != statement.datas[0])
-                index_new++;
-            for (auto &leaf : leafs)
-                for (auto &data : leaf->datas)
-                    // if (data.first.find(key) != std::string::npos)
-                        if (data.second[index].find(key) != std::string::npos)
-                        {
-                            keys.push_back(data.first);
-                            std::vector<std::string> tmp = data.second;
-                            tmp[index_new] = statement.datas[1];
-                            new_datas.push_back(tmp);
-                        }
-            for (int i = 0; i < keys.size(); i++)
-            {
-                IndexTree::remove(tree, keys[i]);
-                std::string new_key;
-                for (auto &j : new_datas[i])
-                    new_key += j + ",";
-                IndexTree::insert(tree, new_key, new_datas[i]);
-            }
-            result = IndexTree::show_columns(tree);
-            break;
-        }
-        case Operation::SELECT:
-        {
-            key = statement.datas[1];
-            std::vector<std::shared_ptr<IndexTree::LeafNode>> leafs = IndexTree::fuzzy_find_leaf(tree, key);
-            int index = 0;
-            auto size = tree->column.size();
-            while (index < size && tree->column[index] != statement.datas[0])
-                index++;
-            for (auto &leaf : leafs)
-                for (auto &data : leaf->datas)
-                    // if (data.first.find(key) != std::string::npos)
-                        if (data.second[index].find(key) != std::string::npos)
-                        {
-                            std::string out;
-                            for (auto &j : data.second)
-                                out += j + " ";
-                            result.push_back(out);
-                        }
-            break;
-        }
-        default:
-            break;
+        result = this->cache.show_columns(this->cache.tree);
+        break;
+    }
+    case Operation::SELECT:
+    {
+        key = statement.datas[1];
+        std::vector<std::shared_ptr<IndexTree::LeafNode>> leafs = this->cache.fuzzy_find_leaf(this->cache.tree, key);
+        int index = 0;
+        auto size = this->cache.tree->column.size();
+        while (index < size && this->cache.tree->column[index] != statement.datas[0])
+            index++;
+        for (auto &leaf : leafs)
+            for (auto &data : leaf->datas)
+                // if (data.first.find(key) != std::string::npos)
+                if (data.second[index].find(key) != std::string::npos)
+                {
+                    std::string out;
+                    for (auto &j : data.second)
+                        out += j + " ";
+                    result.push_back(out);
+                }
+        break;
+    }
+    default:
+        break;
     }
     return result;
 }
 
 void Runtime::scheduler()
 {
-    while (!FileOperation::is_empty())
+    while (!fileOp.is_empty())
     {
-        FileOperation::Task task = FileOperation::consume_task();
-        FileOperation::work(task);
+        FileOperation::Task task = fileOp.consume_task();
+        fileOp.work(task);
     }
 }
 
 bool Runtime::is_finish()
 {
-    return FileOperation::is_empty();
+    return fileOp.is_empty();
 }

@@ -104,7 +104,7 @@ std::vector<std::string> Runtime::run_statement(const Statement &statement)
 
 void Runtime::scheduler()
 {
-    while (FileOperation::is_empty())
+    while (!FileOperation::is_empty())
     {
         FileOperation::Task task = FileOperation::consume_task();
         FileOperation::work(task);

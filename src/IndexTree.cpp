@@ -34,11 +34,7 @@ void IndexTree::merge_map(std::shared_ptr<LeafNode> node, const unsigned long lo
 {
     node->map.reset();
     for (const auto &[key, data] : node->datas)
-    {
-        auto hash = HashTable::create_map(key, seed);
-        for (const auto &pos : hash)
-            node->map[pos] = true;
-    }
+        node->map |= HashTable::create_map(key, seed);
 }
 
 /**
@@ -253,8 +249,8 @@ std::shared_ptr<IndexTree::LeafNode> IndexTree::find_leaf(std::shared_ptr<Tree> 
  */
 std::vector<std::shared_ptr<IndexTree::LeafNode>> IndexTree::fuzzy_find_leaf(std::shared_ptr<Tree> tree, const std::string &key)
 {
-    auto hash = HashTable::create_map(key, tree->seed);
-    auto is_all_inmap = [&hash](const std::bitset<HashTable::prime> &map) -> bool {
+    auto hash = HashTable::get_index(key, tree->seed);
+    auto is_all_inmap = [&hash](const std::bitset<HashTable::PRIME> &map) -> bool {
         for (const auto &pos : hash)
             if (!map[pos])
                 return false;
@@ -329,7 +325,7 @@ void IndexTree::merge(std::shared_ptr<Node> node, const unsigned long long &seed
                 auto cousin = std::dynamic_pointer_cast<LeafNode>(now->next);
                 cousin->datas.merge(now->datas);
                 now->datas.clear();
-                FileOperation::merge_file(cousin->filename, now->filename);
+                // FileOperation::merge_file_task(cousin->filename, now->filename);
                 father->children.erase(it);
                 merge_map(cousin, seed);
                 merge_map(father);
@@ -358,7 +354,7 @@ void IndexTree::merge(std::shared_ptr<Node> node, const unsigned long long &seed
         father->children.erase(max->first);
         now->datas.merge(brother->datas);
         brother->datas.clear();
-        FileOperation::merge_file(now->filename, brother->filename);
+        // FileOperation::merge_file_task(now->filename, brother->filename);
         merge_map(now, seed);
         merge_map(father);
         if (father->children.size() < max_children / 2)

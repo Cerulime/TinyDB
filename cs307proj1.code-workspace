@@ -53,7 +53,12 @@
 			"random": "cpp",
 			"map": "cpp",
 			"mutex": "cpp",
-			"condition_variable": "cpp"
+			"condition_variable": "cpp",
+			"chrono": "cpp",
+			"ctime": "cpp",
+			"ratio": "cpp",
+			"thread": "cpp",
+			"variant": "cpp"
 		}
 	}
 }

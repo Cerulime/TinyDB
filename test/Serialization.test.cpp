@@ -30,7 +30,7 @@ int main() {
     assert(expected_output4 == output4);
 
     // Test serialize_map and deserialize_map
-    std::bitset<HashTable::prime> input5;
+    std::bitset<HashTable::PRIME> input5;
     input5[0] = 1;
     input5[1] = 0;
     input5[2] = 1;
@@ -43,7 +43,7 @@ int main() {
     std::string output5 = Serialization::serialize_map(input5);
     assert(output5 == expected_output5);
 
-    std::bitset<HashTable::prime> expected_output6;
+    std::bitset<HashTable::PRIME> expected_output6;
     expected_output6[0] = 1;
     expected_output6[1] = 0;
     expected_output6[2] = 1;
@@ -52,7 +52,7 @@ int main() {
     expected_output6[5] = 1;
     expected_output6[6] = 0;
     expected_output6[7] = 1;
-    std::bitset<HashTable::prime> output6 = Serialization::deserialize_map(expected_output5);
+    std::bitset<HashTable::PRIME> output6 = Serialization::deserialize_map(expected_output5);
     assert(output6 == expected_output6);
 
     std::cout << "All tests passed!\n";

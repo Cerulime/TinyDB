@@ -7,7 +7,6 @@ namespace FileOperation
     {
         CREATE,
         APPEND,
-        MODIFY,
         DELETE
     };
     struct Task
@@ -16,12 +15,15 @@ namespace FileOperation
         std::string filename;
         std::string content;
     };
-    std::queue<Task> tasks;
-    std::mutex tasks_mutex;
-    std::condition_variable_any tasks_cv;
+    extern std::queue<Task> tasks;
+    extern std::mutex tasks_mutex;
 
+    bool is_empty();
     void produce_task(const Task &);
     Task consume_task();
 
-    void merge_file(const std::string &, const std::string &);
+    void work(const Task &);
+    void create_file_task(const std::string &, const std::string &);
+    void merge_file_task(const std::string &, const std::string &);
+    void delete_file_task(const std::string &);
 }

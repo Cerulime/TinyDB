@@ -57,11 +57,11 @@ void Serialization::base64decode(const std::string &str, char* bytes, const std:
  * @param map The bitset map to be serialized.
  * @return The base64-encoded string representation of the serialized map.
  */
-std::string Serialization::serialize_map(const std::bitset<HashTable::prime> &map)
+std::string Serialization::serialize_map(const std::bitset<HashTable::PRIME> &map)
 {
-    constexpr std::size_t size = (HashTable::prime + 7) / 8;
+    constexpr std::size_t size = (HashTable::PRIME + 7) / 8;
     char bytes[size] = {0};
-    for (std::size_t i = 0; i < HashTable::prime; i++)
+    for (std::size_t i = 0; i < HashTable::PRIME; i++)
         bytes[i / 8] |= (map[i] << (i % 8));
     return Serialization::base64encode(bytes, size);
 }
@@ -69,12 +69,12 @@ std::string Serialization::serialize_map(const std::bitset<HashTable::prime> &ma
  * @brief Deserializes a string into a bitset representing a hash table.
  * 
  * @param str The string to deserialize.
- * @return std::bitset<HashTable::prime> The deserialized bitset.
+ * @return std::bitset<HashTable::PRIME> The deserialized bitset.
  * @throws std::runtime_error If there is an error during deserialization.
  */
-std::bitset<HashTable::prime> Serialization::deserialize_map(const std::string &str)
+std::bitset<HashTable::PRIME> Serialization::deserialize_map(const std::string &str)
 {
-    constexpr std::size_t size = (HashTable::prime + 7) / 8;
+    constexpr std::size_t size = (HashTable::PRIME + 7) / 8;
     char bytes[size] = {0};
     try
     {
@@ -84,8 +84,8 @@ std::bitset<HashTable::prime> Serialization::deserialize_map(const std::string &
     {
         throw e;
     }
-    std::bitset<HashTable::prime> map;
-    for (std::size_t i = 0; i < HashTable::prime; i++)
+    std::bitset<HashTable::PRIME> map;
+    for (std::size_t i = 0; i < HashTable::PRIME; i++)
         map[i] = (bytes[i / 8] >> (i % 8)) & 1;
     return map;
 }

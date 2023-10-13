@@ -1,5 +1,4 @@
 #include ".\include\REPL.hpp"
-#include ".\include\HashTable.hpp"
 
 int main()
 {
@@ -17,9 +16,13 @@ int main()
             Runtime::Statement statement = REPL::parse_statement(REPL::now_input);
             if (!Runtime::valid_statement(statement))
                 continue;
-            
+            std::vector<std::string> result = Runtime::run_statement(statement);
+            std::thread worker(Runtime::scheduler);
+            worker.detach();
         }
     }
+    if (!Runtime::is_finish())
+        Runtime::scheduler();
     std::cout << "Goodbye TinyDB!" << std::endl;
     return 0;
 }

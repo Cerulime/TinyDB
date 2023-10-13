@@ -20,6 +20,6 @@ add_subdirectory(src)
 
 add_executable(TinyDB TinyDB.cpp)
 
-target_link_libraries(TinyDB HashTable REPL)
+target_link_libraries(TinyDB REPL)
 
 #include(CPack)

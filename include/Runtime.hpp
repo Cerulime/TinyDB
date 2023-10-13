@@ -1,5 +1,6 @@
 #pragma once
 #include "IndexTree.hpp"
+#include "FileOperation.hpp"
 
 namespace Runtime
 {
@@ -19,10 +20,10 @@ namespace Runtime
         std::vector<std::string> datas;
     };
     inline const Statement null_statement = {Operation::ERRORP, "", {}};
-    std::shared_ptr<IndexTree::Tree> tree;
+    extern std::shared_ptr<IndexTree::Tree> tree;
     
     bool valid_statement(const Statement &);
     std::vector<std::string> run_statement(const Statement &);
-    bool schedule();
+    void scheduler();
     bool is_finish();
 }

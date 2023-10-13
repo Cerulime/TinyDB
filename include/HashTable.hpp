@@ -2,21 +2,22 @@
 #include "Include.hpp"
 
 /*
-n = 971
+n = 500
 p = 1e-4
-m = 18615
+m = 9587
 k = 13
 */
 
 namespace HashTable
 {
-    inline const int str_len = 50;
-    inline const int k_hash = 13;
-    inline const unsigned int prime = 18617;
-    std::mt19937_64 get_rand(std::random_device{}());
+    inline const int MAX_STR_LEN = 10;
+    inline const int K_HASH = 13;
+    inline const unsigned int PRIME = 9587;
+    extern std::mt19937_64 get_rand;
 
     unsigned long long fmix(unsigned long long);
     std::tuple<unsigned long long, unsigned long long> get_hash(const void *, const unsigned int &, const unsigned int &);
-    std::vector<int> create_map(const std::string &, unsigned long long);
-    bool find(const std::bitset<prime> &, const unsigned long long &, const std::string &);
+    std::bitset<PRIME> create_map(const std::string_view &, const unsigned long long &);
+    std::vector<int> get_index(const std::string &, const unsigned long long &);
+    bool find(const std::bitset<PRIME> &, const unsigned long long &, const std::string &);
 }

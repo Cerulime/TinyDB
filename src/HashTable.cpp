@@ -1,5 +1,7 @@
 #include "..\include\HashTable.hpp"
 
+std::mt19937_64 HashTable::get_rand(std::random_device{}());
+
 unsigned long long HashTable::fmix(unsigned long long x)
 {
     x ^= x >> 33;
@@ -60,30 +62,49 @@ std::tuple<unsigned long long, unsigned long long> HashTable::get_hash(const voi
     return std::make_tuple(lw, hg);
 }
 
-std::vector<int> HashTable::create_map(const std::string &s, unsigned long long seed)
+std::bitset<HashTable::PRIME> HashTable::create_map(const std::string_view &s, const unsigned long long &seed)
 {
-    std::vector<int> index;
-
-    int len = s.length();
-    for (int i = 0; i < len; i++)
+    std::bitset<PRIME> map;
+    std::vector<std::string_view> buffer;
+    for (int i = 0; i < s.length(); i++)
     {
-        char ch[str_len] = {};
-        for (int j = 0; i + j < len; j++)
+        int end = s.find(',');
+        assert(end != std::string::npos);
+        buffer.push_back(s.substr(i, end - i));
+        i = end;
+    }
+
+    for (auto &str : buffer)
+    {
+        for (int offset = 0; offset < str.length(); offset++)
         {
-            ch[j] = s[i + j];
-            const auto &[lw, hg] = get_hash(ch, j+1, seed);
-            for (int k = 1; k <= k_hash; k++)
-                index.push_back((lw + hg*k) % prime);
+            char ch[MAX_STR_LEN] = {};
+            for (int j = 0; offset + j < str.length(); j++)
+            {
+                ch[j] = str[offset + j];
+                const auto &[lw, hg] = get_hash(ch, j+1, seed);
+                for (int k = 1; k <= K_HASH; k++)
+                    map.set((lw + hg*k) % PRIME);
+            }
         }
     }
+    return map;
+}
+
+std::vector<int> HashTable::get_index(const std::string &s, const unsigned long long &seed)
+{
+    std::vector<int> index;
+    const auto &[lw, hg] = get_hash(s.c_str(), s.length(), seed);
+    for (int k = 1; k <= K_HASH; k++)
+        index.push_back((lw + hg*k) % PRIME);
     return index;
 }
 
-bool HashTable::find(const std::bitset<prime> &map, const unsigned long long &seed, const std::string &s)
+bool HashTable::find(const std::bitset<PRIME> &map, const unsigned long long &seed, const std::string &s)
 {
     const auto &[lw, hg] = get_hash(s.data(), s.length(), seed);
-    for (int k = 1; k <= k_hash; k++)
-        if (!map[(lw + hg*k) % prime])
+    for (int k = 1; k <= K_HASH; k++)
+        if (!map[(lw + hg*k) % PRIME])
             return false;
     return true;
 }

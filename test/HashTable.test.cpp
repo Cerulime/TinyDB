@@ -6,7 +6,7 @@ void test_hash_table() {
     // Test create_map and find
     std::string s1 = "hello";
     std::string s2 = "world";
-    std::bitset<HashTable::prime> map = HashTable::create_map(s1 + s2, 12345);
+    std::bitset<HashTable::PRIME> map = HashTable::create_map(s1 + s2, 12345);
     assert(HashTable::find(map, 12345, s1));
     assert(HashTable::find(map, 12345, s2));
     assert(!HashTable::find(map, 12345, "foo"));

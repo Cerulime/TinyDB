@@ -1,5 +1,7 @@
 #include "..\include\Runtime.hpp"
 
+std::shared_ptr<IndexTree::Tree> Runtime::tree;
+
 bool Runtime::valid_statement(const Statement &statement)
 {
     return statement.opt != Operation::ERRORP;
@@ -17,7 +19,7 @@ std::vector<std::string> Runtime::run_statement(const Statement &statement)
             break;
         case Operation::INSERT:
             for (auto &i : statement.datas)
-                key += i;
+                key += i + ",";
             IndexTree::insert(tree, key, statement.datas);
             result = IndexTree::show_columns(tree);
             break;
@@ -32,7 +34,7 @@ std::vector<std::string> Runtime::run_statement(const Statement &statement)
                 index++;
             for (auto &leaf : leafs)
                 for (auto &data : leaf->datas)
-                    if (data.first.find(key) != std::string::npos)
+                    // if (data.first.find(key) != std::string::npos)
                         if (data.second[index].find(key) != std::string::npos)
                             keys.push_back(data.first);
             for (auto &true_key : keys)
@@ -55,7 +57,7 @@ std::vector<std::string> Runtime::run_statement(const Statement &statement)
                 index_new++;
             for (auto &leaf : leafs)
                 for (auto &data : leaf->datas)
-                    if (data.first.find(key) != std::string::npos)
+                    // if (data.first.find(key) != std::string::npos)
                         if (data.second[index].find(key) != std::string::npos)
                         {
                             keys.push_back(data.first);
@@ -68,7 +70,7 @@ std::vector<std::string> Runtime::run_statement(const Statement &statement)
                 IndexTree::remove(tree, keys[i]);
                 std::string new_key;
                 for (auto &j : new_datas[i])
-                    new_key += j;
+                    new_key += j + ",";
                 IndexTree::insert(tree, new_key, new_datas[i]);
             }
             result = IndexTree::show_columns(tree);
@@ -84,13 +86,13 @@ std::vector<std::string> Runtime::run_statement(const Statement &statement)
                 index++;
             for (auto &leaf : leafs)
                 for (auto &data : leaf->datas)
-                    if (data.first.find(key) != std::string::npos)
+                    // if (data.first.find(key) != std::string::npos)
                         if (data.second[index].find(key) != std::string::npos)
                         {
-                            std::string tmp;
+                            std::string out;
                             for (auto &j : data.second)
-                                tmp += j + " ";
-                            result.push_back(tmp);
+                                out += j + " ";
+                            result.push_back(out);
                         }
             break;
         }
@@ -98,4 +100,18 @@ std::vector<std::string> Runtime::run_statement(const Statement &statement)
             break;
     }
     return result;
+}
+
+void Runtime::scheduler()
+{
+    while (FileOperation::is_empty())
+    {
+        FileOperation::Task task = FileOperation::consume_task();
+        FileOperation::work(task);
+    }
+}
+
+bool Runtime::is_finish()
+{
+    return FileOperation::is_empty();
 }

@@ -1,5 +1,11 @@
-add_library(Runtime Runtime.cpp)
-add_library(REPL REPL.cpp)
+add_library(FileOperation FileOperation.cpp)
 add_library(HashTable HashTable.cpp)
+add_library(IndexTree IndexTree.cpp)
+add_library(REPL REPL.cpp)
+add_library(Runtime Runtime.cpp)
+add_library(Serialization Serialization.cpp)
 
+target_link_libraries(IndexTree HashTable)
+target_link_libraries(Serialization IndexTree)
+target_link_libraries(Runtime IndexTree FileOperation)
 target_link_libraries(REPL Runtime)

@@ -4,11 +4,13 @@
 namespace IndexTree
 {
     inline const int max_children = 64;
+
+    struct InternalNode;
     struct Node
     {
         bool is_leaf;
         std::shared_ptr<InternalNode> parent;
-        std::bitset<HashTable::prime> map;
+        std::bitset<HashTable::PRIME> map;
         explicit Node(bool is_leaf) : is_leaf(is_leaf) {}
         virtual ~Node() = default;
     };

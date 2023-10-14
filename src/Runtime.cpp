@@ -1,5 +1,10 @@
 #include "..\include\Runtime.hpp"
 
+bool Runtime::check()
+{
+    return this->cache.check_tree();
+}
+
 bool Runtime::valid_statement(const Statement &statement)
 {
     return statement.opt != Operation::ERRORP;
@@ -12,6 +17,10 @@ bool Runtime::valid_statement(const Statement &statement)
  */
 std::vector<std::string> Runtime::run_statement(const Statement &statement)
 {
+    std::vector<std::shared_ptr<IndexTree::LeafNode>> leafs;
+    auto fuzzy_out = [&leafs](){
+        std::cout << "Hit leafs: " << leafs.size() << std::endl;
+    };
     std::vector<std::string> result;
     std::string key;
     switch (statement.opt)
@@ -34,7 +43,10 @@ std::vector<std::string> Runtime::run_statement(const Statement &statement)
         if (this->cache.table_name != statement.table)
             break;
         key = statement.datas[1];
-        std::vector<std::shared_ptr<IndexTree::LeafNode>> leafs = this->cache.fuzzy_find_leaf(this->cache.tree, key);
+        leafs = this->cache.fuzzy_find_leaf(this->cache.tree, key);
+        
+        fuzzy_out();
+
         std::vector<std::string> keys;
         int index = 0;
         auto size = this->cache.tree->column.size();
@@ -55,7 +67,10 @@ std::vector<std::string> Runtime::run_statement(const Statement &statement)
         if (this->cache.table_name != statement.table)
             break;
         key = statement.datas[3];
-        std::vector<std::shared_ptr<IndexTree::LeafNode>> leafs = this->cache.fuzzy_find_leaf(this->cache.tree, key);
+        leafs = this->cache.fuzzy_find_leaf(this->cache.tree, key);
+
+        fuzzy_out();
+
         std::vector<std::string> keys;
         std::vector<std::vector<std::string>> new_datas;
         int index = 0;
@@ -91,7 +106,10 @@ std::vector<std::string> Runtime::run_statement(const Statement &statement)
         if (this->cache.table_name != statement.table)
             break;
         key = statement.datas[2];
-        std::vector<std::shared_ptr<IndexTree::LeafNode>> leafs = this->cache.fuzzy_find_leaf(this->cache.tree, key);
+        leafs = this->cache.fuzzy_find_leaf(this->cache.tree, key);
+
+        fuzzy_out();
+
         int index = 0;
         auto size = this->cache.tree->column.size();
         while (index < size && this->cache.tree->column[index] != statement.datas[1])

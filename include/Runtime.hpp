@@ -26,6 +26,8 @@ public:
     void scheduler();
     bool is_finish();
 
+    bool check();
+
 private:
     IndexTree cache;
     FileOperation fileOp;

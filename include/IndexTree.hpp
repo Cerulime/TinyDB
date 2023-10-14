@@ -10,7 +10,7 @@ public:
     struct Tree;
 private:
     HashTable hash_table;
-    const int max_children = 64;
+    const std::size_t max_children = 64;
     
     void merge_map(std::shared_ptr<LeafNode>, const unsigned long long &);
     void merge_map(std::shared_ptr<InternalNode>);
@@ -38,6 +38,7 @@ public:
             while (filename_map.count(filename))
                 filename = std::to_string((unsigned short)hash_table.get_rand());
             filename_map[filename] = true;
+            next = nullptr;
         }
     };
     struct InternalNode : Node
@@ -62,4 +63,6 @@ public:
     void insert(std::shared_ptr<Tree>, const std::string &, const std::vector<std::string> &);
     std::vector<std::shared_ptr<LeafNode>> fuzzy_find_leaf(std::shared_ptr<Tree>, const std::string &);
     void remove(std::shared_ptr<Tree>, const std::string &);
+
+    bool check_tree();
 };

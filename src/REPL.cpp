@@ -22,6 +22,7 @@ void REPL::manual()
 
     std::cout << TAB << ".help -> Manual" << std::endl;
     std::cout << TAB << ".last -> Last input" << std::endl;
+    std::cout << TAB << ".load -> Load a file as input" << std::endl;
     std::cout << TAB << ".exit -> Exit" << std::endl;
 }
 
@@ -59,8 +60,10 @@ bool REPL::parse_meta_cmd(const std::string &input)
          { manual(); return true; }},
         {".last", [&me]()
          { std::cout << me->last_input << std::endl; return true; }},
+        {".load", []()
+         { std::cout << "The file path: "; return true; }},
         {".exit", []()
-         { std::cout << "Exiting..."; return false; }}};
+         { std::cout << "Exiting..." << std::endl; return false; }}};
 
     auto it = commands.find(input);
     if (it != commands.end())
@@ -189,6 +192,8 @@ Runtime::Statement REPL::parse_statement(const std::string &input_raw)
     Runtime::Statement statement = {};
     std::string_view input = input_raw;
     auto len = input.length();
+    if (len == 0 || !input.at(len - 1) == ';')
+        return error_statement(input, __func__, __LINE__);
     if (!input.compare(0, 6, "CREATE"))
     {
         statement.opt = Runtime::Operation::CREATE;

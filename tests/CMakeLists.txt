@@ -5,3 +5,11 @@ add_test(NAME test_FileOperation COMMAND test_FileOperation)
 add_executable(test_HashTable test_HashTable.cpp)
 target_link_libraries(test_HashTable gtest_main HashTable)
 add_test(NAME test_HashTable COMMAND test_HashTable)
+
+add_executable(test_REPL test_REPL.cpp)
+target_link_libraries(test_REPL gtest_main REPL)
+add_test(NAME test_REPL COMMAND test_REPL)
+
+add_executable(test_Serialization test_Serialization.cpp)
+target_link_libraries(test_Serialization gtest_main Serialization)
+add_test(NAME test_Serialization COMMAND test_Serialization)

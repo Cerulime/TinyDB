@@ -30,5 +30,5 @@ private:
     static Runtime::Statement parse_table(Runtime::Statement, const std::string_view &, const std::size_t &, std::size_t &);
     static Runtime::Statement parse_where(Runtime::Statement, const std::string_view &, const std::size_t &, std::size_t &);
     static Runtime::Statement parse_datas(Runtime::Statement, const std::string_view &, const std::size_t &, std::size_t &, const char &);
-    static const Runtime::Statement error_statement(const std::string_view &, const std::string &);
+    static const Runtime::Statement error_statement(const std::string_view &, const std::string &, const int &);
 };

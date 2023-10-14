@@ -83,7 +83,8 @@ std::bitset<HashTable::PRIME> Serialization::deserialize_map(const std::string &
     }
     catch (const std::runtime_error &e)
     {
-        throw e;
+        std::cerr << e.what() << std::endl;
+        return {};
     }
     std::bitset<HashTable::PRIME> map;
     for (std::size_t i = 0; i < HashTable::PRIME; i++)

@@ -17,7 +17,7 @@ private:
     void update_map(std::shared_ptr<InternalNode>);
     std::shared_ptr<InternalNode> split(std::shared_ptr<Node>, const unsigned long long &);
     std::shared_ptr<LeafNode> find_leaf(std::shared_ptr<Tree>, const std::string &);
-    inline bool in_leaf(std::shared_ptr<LeafNode>, const std::string &);
+    inline bool in_leaf(std::shared_ptr<LeafNode>, const std::string &) const;
     void merge(std::shared_ptr<Node>, const unsigned long long &);
 public:
     struct Node
@@ -33,7 +33,12 @@ public:
         std::string filename;
         std::shared_ptr<LeafNode> next;
         std::map<std::string, std::vector<std::string>> datas;
-        LeafNode() : Node(true) {}
+        LeafNode(std::unordered_map<std::string, bool> &filename_map, HashTable &hash_table) : Node(true) {
+            filename = std::to_string((unsigned short)hash_table.get_rand());
+            while (filename_map.count(filename))
+                filename = std::to_string((unsigned short)hash_table.get_rand());
+            filename_map[filename] = true;
+        }
     };
     struct InternalNode : Node
     {
@@ -48,9 +53,9 @@ public:
         std::vector<std::string> column;
     };
 
-    IndexTree();
     std::shared_ptr<Tree> tree;
     std::string table_name;
+    std::unordered_map<std::string, bool> filename_map;
 
     std::shared_ptr<Tree> build(const std::vector<std::string> &);
     std::vector<std::string> show_columns(const std::shared_ptr<Tree> &);

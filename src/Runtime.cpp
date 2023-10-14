@@ -90,22 +90,32 @@ std::vector<std::string> Runtime::run_statement(const Statement &statement)
     {
         if (this->cache.table_name != statement.table)
             break;
-        key = statement.datas[1];
+        key = statement.datas[2];
         std::vector<std::shared_ptr<IndexTree::LeafNode>> leafs = this->cache.fuzzy_find_leaf(this->cache.tree, key);
         int index = 0;
         auto size = this->cache.tree->column.size();
-        while (index < size && this->cache.tree->column[index] != statement.datas[0])
+        while (index < size && this->cache.tree->column[index] != statement.datas[1])
             index++;
+        int index_sel = -1;
+        if (statement.datas[0] != "*")
+        {
+            index_sel = 0;
+            while (index_sel < size && this->cache.tree->column[index_sel] != statement.datas[0])
+                index_sel++;
+        }
+        int count = 0;
         for (auto &leaf : leafs)
             for (auto &data : leaf->datas)
                 // if (data.first.find(key) != std::string::npos)
                 if (data.second[index].find(key) != std::string::npos)
                 {
-                    std::string out;
-                    for (auto &j : data.second)
-                        out += j + " ";
-                    result.push_back(out);
+                    if (index_sel == -1)
+                        count++;
+                    else
+                        result.push_back(data.second[index_sel]);
                 }
+        if (index_sel == -1)
+            result = {std::to_string(count)};
         break;
     }
     default:

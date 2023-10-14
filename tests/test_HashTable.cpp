@@ -39,7 +39,7 @@ TEST(HashTableTest, CreateMapLongString)
 TEST(HashTableTest, CreateMapSingleString)
 {
     HashTable ht;
-    std::string_view s = "apple,";
+    std::string_view s = "apple";
     unsigned long long seed = 123456789;
     std::bitset<HashTable::PRIME> map = ht.create_map(s, seed);
     std::vector<int> index = ht.get_index("app", seed);

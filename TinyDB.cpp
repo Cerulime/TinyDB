@@ -1,10 +1,11 @@
 #include ".\include\REPL.hpp"
 
+REPL repl;
+Runtime runtime;
+
 int main()
 {
-    REPL repl;
     repl.welcome();
-    Runtime runtime;
     while (true)
     {
         repl.start();
@@ -20,6 +21,8 @@ int main()
             if (!Runtime::valid_statement(statement))
                 continue;
             std::vector<std::string> result = runtime.run_statement(statement);
+            for (auto &x : result)
+                std::cout << x << std::endl;
             std::thread worker(&Runtime::scheduler, &runtime);
             worker.detach();
         }

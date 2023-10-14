@@ -88,12 +88,14 @@ std::bitset<HashTable::PRIME> HashTable::create_map(const std::string_view &s, c
 {
     std::bitset<PRIME> map;
     std::vector<std::string_view> buffer;
-    for (int i = 0; i < s.length(); i++)
+    size_t start = 0;
+    while (start < s.length())
     {
-        int end = s.find(',');
-        assert(end != std::string::npos);
-        buffer.push_back(s.substr(i, end - i));
-        i = end;
+        size_t end = s.find(',', start);
+        if (end == std::string::npos)
+            end = s.length();
+        buffer.push_back(s.substr(start, end - start));
+        start = end + 1;
     }
 
     for (auto &str : buffer)

@@ -1,3 +1,7 @@
 add_executable(test_FileOperation test_FileOperation.cpp)
 target_link_libraries(test_FileOperation gtest_main FileOperation)
 add_test(NAME test_FileOperation COMMAND test_FileOperation)
+
+add_executable(test_HashTable test_HashTable.cpp)
+target_link_libraries(test_HashTable gtest_main HashTable)
+add_test(NAME test_HashTable COMMAND test_HashTable)

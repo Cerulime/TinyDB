@@ -45,7 +45,10 @@
         "iterator": "cpp",
         "numeric": "cpp",
         "random": "cpp",
-        "map": "cpp"
+        "map": "cpp",
+        "variant": "cpp",
+        "cassert": "cpp",
+        "queue": "cpp"
     },
     "cmake.configureOnOpen": true,
     "cmake.buildDirectory": "${workspaceFolder}/build",

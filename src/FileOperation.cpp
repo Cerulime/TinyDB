@@ -26,6 +26,18 @@ bool FileOperation::is_empty()
  */
 void FileOperation::work(const Task &task)
 {
+    std::mutex *file_mutex, *file_mutex2 = nullptr;
+    {
+        std::unique_lock<std::mutex> map_lock(map_mutex);
+        file_mutex = &file_mutex_map[task.filename];
+        if (task.opt == Operation::APPEND)
+            file_mutex2 = &file_mutex_map[task.content];
+    }
+    std::unique_lock<std::mutex> lock(*file_mutex);
+    std::unique_lock<std::mutex> lock2;
+    if (task.opt == Operation::APPEND)
+        lock2 = std::unique_lock<std::mutex>(*file_mutex2);
+
     switch (task.opt)
     {
     case Operation::CREATE:
@@ -46,7 +58,7 @@ void FileOperation::work(const Task &task)
         }
         in2.close();
         out.close();
-        std::remove(task.content.c_str());
+        // std::remove(task.content.c_str());
         break;
     }
     case Operation::DELETE:

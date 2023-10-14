@@ -17,10 +17,13 @@ std::vector<std::string> Runtime::run_statement(const Statement &statement)
     switch (statement.opt)
     {
     case Operation::CREATE:
+        this->cache.table_name = statement.table;
         this->cache.tree = this->cache.build(statement.datas);
         result = this->cache.show_columns(this->cache.tree);
         break;
     case Operation::INSERT:
+        if (this->cache.table_name != statement.table)
+            break;
         for (auto &i : statement.datas)
             key += i + ",";
         this->cache.insert(this->cache.tree, key, statement.datas);
@@ -28,6 +31,8 @@ std::vector<std::string> Runtime::run_statement(const Statement &statement)
         break;
     case Operation::DELETE:
     {
+        if (this->cache.table_name != statement.table)
+            break;
         key = statement.datas[1];
         std::vector<std::shared_ptr<IndexTree::LeafNode>> leafs = this->cache.fuzzy_find_leaf(this->cache.tree, key);
         std::vector<std::string> keys;
@@ -47,6 +52,8 @@ std::vector<std::string> Runtime::run_statement(const Statement &statement)
     }
     case Operation::UPDATE:
     {
+        if (this->cache.table_name != statement.table)
+            break;
         key = statement.datas[3];
         std::vector<std::shared_ptr<IndexTree::LeafNode>> leafs = this->cache.fuzzy_find_leaf(this->cache.tree, key);
         std::vector<std::string> keys;
@@ -81,6 +88,8 @@ std::vector<std::string> Runtime::run_statement(const Statement &statement)
     }
     case Operation::SELECT:
     {
+        if (this->cache.table_name != statement.table)
+            break;
         key = statement.datas[1];
         std::vector<std::shared_ptr<IndexTree::LeafNode>> leafs = this->cache.fuzzy_find_leaf(this->cache.tree, key);
         int index = 0;

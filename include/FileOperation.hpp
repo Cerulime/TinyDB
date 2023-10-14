@@ -28,4 +28,6 @@ public:
 private:
     std::queue<Task> tasks;
     std::mutex tasks_mutex;
+    std::mutex map_mutex;
+    std::unordered_map<std::string, std::mutex> file_mutex_map;
 };

@@ -50,6 +50,7 @@ public:
 
     IndexTree();
     std::shared_ptr<Tree> tree;
+    std::string table_name;
 
     std::shared_ptr<Tree> build(const std::vector<std::string> &);
     std::vector<std::string> show_columns(const std::shared_ptr<Tree> &);

@@ -86,6 +86,12 @@ std::tuple<unsigned long long, unsigned long long> HashTable::get_hash(const voi
  */
 std::bitset<HashTable::PRIME> HashTable::create_map(const std::string_view &s, const unsigned long long &seed)
 {
+    if (s.length() >= 5)
+    {
+        auto it = cache.find(s);
+        if (it != cache.end())
+            return it->second;
+    }
     std::bitset<PRIME> map;
     std::vector<std::string_view> buffer;
     size_t start = 0;
@@ -112,6 +118,11 @@ std::bitset<HashTable::PRIME> HashTable::create_map(const std::string_view &s, c
             }
         }
     }
+
+    if (s.length() >= 5)
+        cache[s] = map;
+    if (cache.size() > 1000)
+        cache.clear();
     return map;
 }
 

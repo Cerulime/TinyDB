@@ -10,6 +10,14 @@ int main()
     {
         repl.start();
         std::string now_input = repl.get_now_input();
+        if (now_input.empty())
+        {
+            std::cout << std::endl;
+            continue;
+        }
+
+        auto timer_begin = std::chrono::high_resolution_clock::now();
+
         if (now_input[0] == '.')
         {
             if (!repl.parse_meta_cmd(now_input))
@@ -32,7 +40,7 @@ int main()
                         continue;
                     result = runtime.run_statement(statement);
                     success++;
-                    if (success % 1000 == 0)
+                    if (success % 10000 == 0)
                         std::cout << "Loading... " << success << " of " << all << " lines." << std::endl;
                 }
                 infile.close();
@@ -53,12 +61,20 @@ int main()
             std::vector<std::string> result = runtime.run_statement(statement);
             for (auto &x : result)
                 std::cout << x << std::endl;
-            std::thread worker(&Runtime::scheduler, &runtime);
-            worker.detach();
+            if (statement.opt != Runtime::Operation::SELECT)
+            {
+                std::thread worker(&Runtime::scheduler, &runtime);
+                worker.detach();
+            }
         }
-        #ifdef DEBUG
-            assert(runtime.check());
-        #endif
+#ifdef DEBUG
+        assert(runtime.check());
+#endif
+
+        auto timer_end = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(timer_end - timer_begin);
+        std::cout << "Time measured: " << duration.count() * 1e-3 << " ms." << std::endl;
+        std::cout << "-------------" << std::endl;
     }
     if (!runtime.is_finish())
         runtime.scheduler();
